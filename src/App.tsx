@@ -8,6 +8,7 @@ import Index from './pages/Index';
 import About from './pages/About';
 import FeaturesPage from './pages/Features';
 import PricingPage from './pages/PricingPage';
+import Payment from './pages/Payment';
 import Contact from './pages/Contact';
 import Dashboard from './pages/Dashboard';
 import InstructorDashboard from './pages/InstructorDashboard';
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/about" element={<About />} />
           <Route path="/features" element={<FeaturesPage />} />
           <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/payment" element={<Payment />} />
           <Route path="/contact" element={<Contact />} />
 
           {/* Role-based Dashboards */}

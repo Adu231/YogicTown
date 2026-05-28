@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Sparkles } from 'lucide-react';
 import { PRICING_PLANS } from '@/constants';
+import { useAuth } from '@/hooks/useAuth';
 
 export function PricingSection() {
+  const { user } = useAuth();
   const [isYearly, setIsYearly] = useState(false);
 
   return (
@@ -100,20 +102,38 @@ export function PricingSection() {
                 ))}
               </ul>
 
-              <Link
-                to={plan.id === 'free' ? '/register' : '/register'}
-                className={`block w-full text-center py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                  plan.highlighted
-                    ? 'bg-white hover:bg-white/90'
-                    : 'hover:opacity-90'
-                }`}
-                style={plan.highlighted
-                  ? { color: 'hsl(133 18% 59%)' }
-                  : { background: 'hsl(133 18% 59%)', color: 'white' }
-                }
-              >
-                {plan.id === 'free' ? 'Get Started Free' : 'Start 7-Day Trial'}
-              </Link>
+              {user ? (
+                <Link
+                  to="/payment"
+                  state={{ planId: plan.id, isYearly }}
+                  className={`block w-full text-center py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                    plan.highlighted
+                      ? 'bg-white hover:bg-white/90'
+                      : 'hover:opacity-90'
+                  }`}
+                  style={plan.highlighted
+                    ? { color: 'hsl(133 18% 59%)' }
+                    : { background: 'hsl(133 18% 59%)', color: 'white' }
+                  }
+                >
+                  {plan.id === 'free' ? 'Activate Seeker Plan' : 'Subscribe & Align Now'}
+                </Link>
+              ) : (
+                <Link
+                  to={plan.id === 'free' ? '/register' : '/register'}
+                  className={`block w-full text-center py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                    plan.highlighted
+                      ? 'bg-white hover:bg-white/90'
+                      : 'hover:opacity-90'
+                  }`}
+                  style={plan.highlighted
+                    ? { color: 'hsl(133 18% 59%)' }
+                    : { background: 'hsl(133 18% 59%)', color: 'white' }
+                  }
+                >
+                  {plan.id === 'free' ? 'Get Started Free' : 'Start 7-Day Trial'}
+                </Link>
+              )}
             </div>
           ))}
         </div>
