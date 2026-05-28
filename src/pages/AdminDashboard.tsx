@@ -213,14 +213,14 @@ const AdminDashboard = () => {
       {/* Sidebar */}
       <aside className={`fixed lg:relative z-40 inset-y-0 left-0 flex flex-col transition-all duration-300 ${sidebarOpen ? 'w-64' : 'lg:w-64 w-0'} overflow-hidden`}
         style={{ background: 'hsl(var(--sidebar-background))', borderRight: '1px solid hsl(var(--sidebar-border))' }}>
-        <div className="flex items-center gap-2 px-5 py-5 border-b border-sidebar-border">
+        <Link to="/" className="flex items-center gap-2 px-5 py-5 border-b border-sidebar-border hover:opacity-80 transition-opacity">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'hsl(133 18% 59%)' }}>
             <Leaf size={16} className="text-white" />
           </div>
           <span className="font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'hsl(150 15% 12%)' }}>
             Yogic<span style={{ color: 'hsl(27 87% 67%)' }}>Town</span>
           </span>
-        </div>
+        </Link>
         <div className="px-3 py-3 border-b border-sidebar-border mx-3 mt-2 mb-1 rounded-xl" style={{ background: 'hsl(220 70% 95%)' }}>
           <div className="flex items-center gap-1.5">
             <Shield size={12} style={{ color: ADMIN_COLOR }} />
