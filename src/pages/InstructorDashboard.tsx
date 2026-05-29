@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Leaf, Home, BookOpen, Users, BarChart3, Settings, LogOut,
   Menu, X, Bell, Play, Plus, Star, Clock, DollarSign,
   CheckCircle, Video, Calendar, MessageSquare,
   Award, Upload, Eye, Edit2, Trash2, Filter, Mail, Phone,
-  MapPin, TrendingUp, Target,
+  MapPin, TrendingUp, Target, Search,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
@@ -78,9 +78,110 @@ const InstructorDashboard = () => {
   const [activeNav, setActiveNav] = useState('overview');
 
   // Data state
-  const [classes, setClasses] = useState(INITIAL_CLASSES);
-  const [students, setStudents] = useState(INITIAL_STUDENTS);
-  const [sessions, setSessions] = useState(INITIAL_SESSIONS);
+  const [classes, setClasses] = useState(() => {
+    const stored = localStorage.getItem('instructor_classes');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return INITIAL_CLASSES; }
+    }
+    return INITIAL_CLASSES;
+  });
+
+  const [students, setStudents] = useState(() => {
+    const stored = localStorage.getItem('instructor_students');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return INITIAL_STUDENTS; }
+    }
+    return INITIAL_STUDENTS;
+  });
+
+  const [sessions, setSessions] = useState(() => {
+    const stored = localStorage.getItem('instructor_sessions');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return INITIAL_SESSIONS; }
+    }
+    return INITIAL_SESSIONS;
+  });
+
+  const [reviews, setReviews] = useState(() => {
+    const stored = localStorage.getItem('instructor_reviews');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { }
+    }
+    return REVIEWS.map((r, idx) => ({ ...r, id: idx + 1, reply: '' }));
+  });
+
+  // Notifications State
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState(() => {
+    const stored = localStorage.getItem('instructor_notifications');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { }
+    }
+    return [
+      { id: 1, title: 'New Student Enrolled 🧘', desc: 'Meera Singh joined Morning Vinyasa Flow.', time: '2h ago', read: false },
+      { id: 2, title: 'Payout Processed 💳', desc: 'Your monthly payout of ₹24,300 has been transferred.', time: '1d ago', read: true },
+    ];
+  });
+
+  // Reply review states
+  const [replyingReviewId, setReplyingReviewId] = useState<number | null>(null);
+  const [replyText, setReplyText] = useState('');
+
+  // Messaging Modal State
+  const [messageStudentOpen, setMessageStudentOpen] = useState(false);
+  const [messageText, setMessageText] = useState('');
+
+  // Dynamic Session Started states
+  const [startedSessions, setStartedSessions] = useState<number[]>(() => {
+    const stored = localStorage.getItem('instructor_started_sessions');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return []; }
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('instructor_started_sessions', JSON.stringify(startedSessions));
+  }, [startedSessions]);
+
+  const handleStartSession = (id: number, title: string) => {
+    setStartedSessions((prev) => {
+      const isAlreadyStarted = prev.includes(id);
+      if (isAlreadyStarted) {
+        toast.info(`Session ended: ${title}`);
+        return prev.filter(x => x !== id);
+      } else {
+        toast.success(`Session started! Live now: ${title} 🎥`);
+        return [...prev, id];
+      }
+    });
+  };
+
+  // Student list filtering state
+  const [studentPlanFilter, setStudentPlanFilter] = useState('All');
+  const [studentClassFilter, setStudentClassFilter] = useState('All');
+  const [studentSearchQuery, setStudentSearchQuery] = useState('');
+
+  // Sync state to localStorage
+  useEffect(() => {
+    localStorage.setItem('instructor_classes', JSON.stringify(classes));
+  }, [classes]);
+
+  useEffect(() => {
+    localStorage.setItem('instructor_students', JSON.stringify(students));
+  }, [students]);
+
+  useEffect(() => {
+    localStorage.setItem('instructor_sessions', JSON.stringify(sessions));
+  }, [sessions]);
+
+  useEffect(() => {
+    localStorage.setItem('instructor_reviews', JSON.stringify(reviews));
+  }, [reviews]);
+
+  useEffect(() => {
+    localStorage.setItem('instructor_notifications', JSON.stringify(notifications));
+  }, [notifications]);
 
   // Modal states
   const [newClassOpen, setNewClassOpen] = useState(false);
@@ -152,7 +253,7 @@ const InstructorDashboard = () => {
       toast.success(`Class "${classForm.title}" updated successfully!`);
     } else {
       const newClass = {
-        id: classes.length + 1,
+        id: classes.length > 0 ? Math.max(...classes.map(c => c.id)) + 1 : 1,
         title: classForm.title,
         level: classForm.level,
         students: 0,
@@ -164,7 +265,7 @@ const InstructorDashboard = () => {
         description: classForm.description,
       };
       setClasses(prev => [...prev, newClass]);
-      toast.success(`Class "${newClass.title}" created successfully!`);
+      toast.success(`Class "${classForm.title}" created successfully!`);
     }
     closeClassModal();
   };
@@ -269,7 +370,7 @@ const InstructorDashboard = () => {
       toast.success('Session updated successfully!');
     } else {
       const newSession = {
-        id: sessions.length + 1,
+        id: sessions.length > 0 ? Math.max(...sessions.map(s => s.id)) + 1 : 1,
         title: cls?.title || 'New Session',
         time: `${dateStr}, ${timeStr}`,
         students: 0,
@@ -389,10 +490,57 @@ const InstructorDashboard = () => {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <button className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-muted relative">
-              <Bell size={18} />
-              <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-muted relative"
+              >
+                <Bell size={18} />
+                {notifications.some(n => !n.read) && (
+                  <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                )}
+              </button>
+              
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 rounded-2xl border border-border bg-card p-4 shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="flex items-center justify-between border-b border-border pb-2 mb-3">
+                    <h4 className="font-bold text-sm">Notifications</h4>
+                    <button 
+                      onClick={() => {
+                        setNotifications(notifications.map(n => ({ ...n, read: true })));
+                        toast.success('All marked as read');
+                      }}
+                      className="text-xs font-semibold hover:opacity-85"
+                      style={{ color: ACCENT }}
+                    >
+                      Mark all as read
+                    </button>
+                  </div>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {notifications.length > 0 ? (
+                      notifications.map((n) => (
+                        <div 
+                          key={n.id} 
+                          onClick={() => {
+                            setNotifications(notifications.map(item => item.id === n.id ? { ...item, read: true } : item));
+                          }}
+                          className={`p-2.5 rounded-xl text-left transition-colors cursor-pointer ${n.read ? 'bg-background hover:bg-muted/40 border border-transparent' : 'bg-primary/5 hover:bg-primary/10 border border-primary/20 border-l-2 border-l-primary'}`}
+                          style={!n.read ? { borderLeftColor: ACCENT } : {}}
+                        >
+                          <div className="flex justify-between items-start gap-2 mb-0.5">
+                            <h5 className="font-semibold text-xs text-foreground leading-tight">{n.title}</h5>
+                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">{n.time}</span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">{n.desc}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-muted-foreground text-center py-4">No new notifications</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
             <Link to="/profile">
               <img src={user.avatar} alt={user.name} className="w-9 h-9 rounded-full object-cover border-2" style={{ borderColor: ACCENT }} />
             </Link>
@@ -446,17 +594,23 @@ const InstructorDashboard = () => {
                 <div className="card-wellness">
                   <h3 className="font-semibold mb-4">Today's Sessions</h3>
                   <div className="space-y-3">
-                    {sessions.slice(0, 3).map((s, i) => (
-                      <div key={i} className="p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
-                        <div className="text-sm font-medium mb-1">{s.title}</div>
-                        <div className="text-xs text-muted-foreground mb-2">{s.time} · {s.students} joined</div>
-                        <button onClick={() => toast.success(`Starting: ${s.title}`)}
-                          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg text-white"
-                          style={{ background: ACCENT }}>
-                          <Play size={10} fill="currentColor" /> Go Live
-                        </button>
-                      </div>
-                    ))}
+                    {sessions.slice(0, 3).map((s, i) => {
+                      const isStarted = startedSessions.includes(s.id);
+                      return (
+                        <div key={i} className="p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
+                          <div className="text-sm font-medium mb-1">{s.title}</div>
+                          <div className="text-xs text-muted-foreground mb-2">{s.time} · {s.students} joined</div>
+                          <button
+                            onClick={() => handleStartSession(s.id, s.title)}
+                            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all"
+                            style={isStarted
+                              ? { background: isDark ? 'hsl(133 20% 20%)' : 'hsl(133 20% 92%)', color: isDark ? 'hsl(133 25% 65%)' : 'hsl(133 20% 40%)' }
+                              : { background: ACCENT, color: 'white' }}>
+                            {isStarted ? 'Started ✓' : <><Play size={10} fill="currentColor" /> Go Live</>}
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -486,13 +640,18 @@ const InstructorDashboard = () => {
                     <button onClick={() => setActiveNav('reviews')} className="text-xs" style={{ color: ACCENT }}>See all</button>
                   </div>
                   <div className="space-y-3">
-                    {REVIEWS.slice(0, 2).map((r, i) => (
+                    {reviews.slice(0, 2).map((r, i) => (
                       <div key={i} className="p-3 rounded-xl bg-muted/40">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-medium">{r.student}</span>
                           <div className="flex">{Array.from({ length: r.rating }).map((_, j) => <Star key={j} size={10} fill="hsl(45 80% 50%)" color="hsl(45 80% 50%)" />)}</div>
                         </div>
                         <p className="text-xs text-muted-foreground leading-relaxed">{r.comment}</p>
+                        {r.reply && (
+                          <div className="mt-1.5 pl-2 border-l border-primary/40 text-[10px] text-muted-foreground italic">
+                            Reply: {r.reply}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -585,76 +744,157 @@ const InstructorDashboard = () => {
           )}
 
           {/* ── Students ── */}
-          {activeNav === 'students' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold">My Students</h2>
-                  <p className="text-sm text-muted-foreground">Track progress and engagement of your students</p>
+          {activeNav === 'students' && (() => {
+            const filteredStudents = students.filter(s => {
+              const planMatch = studentPlanFilter === 'All' || s.plan === studentPlanFilter;
+              const classMatch = studentClassFilter === 'All' || s.enrolledIn === studentClassFilter;
+              const searchMatch = studentSearchQuery.trim() === '' || 
+                s.name.toLowerCase().includes(studentSearchQuery.toLowerCase()) || 
+                s.email.toLowerCase().includes(studentSearchQuery.toLowerCase());
+              return planMatch && classMatch && searchMatch;
+            });
+            return (
+              <div className="space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-bold">My Students</h2>
+                    <p className="text-sm text-muted-foreground">Track progress and engagement of your students</p>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-3">
+                    {/* Search Filter */}
+                    <div className="relative">
+                      <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        type="text"
+                        placeholder="Search student..."
+                        value={studentSearchQuery}
+                        onChange={(e) => setStudentSearchQuery(e.target.value)}
+                        className="bg-muted border border-border rounded-lg pl-8 pr-3 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary w-40 sm:w-48"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Plan:</span>
+                      <select
+                        value={studentPlanFilter}
+                        onChange={(e) => setStudentPlanFilter(e.target.value)}
+                        className="bg-muted border border-border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                      >
+                        <option value="All">All Plans</option>
+                        <option value="Premium">Premium</option>
+                        <option value="Elite">Elite</option>
+                        <option value="Basic">Basic</option>
+                        <option value="Free">Free</option>
+                      </select>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Class:</span>
+                      <select
+                        value={studentClassFilter}
+                        onChange={(e) => setStudentClassFilter(e.target.value)}
+                        className="bg-muted border border-border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                      >
+                        <option value="All">All Classes</option>
+                        {Array.from(new Set(students.map(s => s.enrolledIn))).map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <button 
+                      onClick={() => {
+                        setStudentPlanFilter('All');
+                        setStudentClassFilter('All');
+                        setStudentSearchQuery('');
+                        toast.info('Filters reset to default');
+                      }}
+                      className="px-3 py-1 rounded-lg text-xs font-semibold border border-border hover:bg-muted"
+                    >
+                      Reset
+                    </button>
+                  </div>
                 </div>
-                <button onClick={() => toast.info('Filter applied')} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm border border-border hover:bg-muted transition-colors">
-                  <Filter size={14} /> Filter
-                </button>
+
+                <div className="card-wellness overflow-x-auto">
+                  {filteredStudents.length > 0 ? (
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4">Student</th>
+                          <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4">Plan</th>
+                          <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4">Sessions</th>
+                          <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4">Progress</th>
+                          <th className="text-left text-xs font-medium text-muted-foreground py-3">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredStudents.map((s) => (
+                          <tr key={s.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                            <td className="py-3 pr-4">
+                              <div className="flex items-center gap-3">
+                                <img src={s.avatar} alt={s.name} className="w-8 h-8 rounded-full" />
+                                <div>
+                                  <div className="text-sm font-medium">{s.name}</div>
+                                  <div className="text-xs text-muted-foreground">Joined {s.joinedDays}d ago</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3 pr-4">
+                              <span className="text-xs px-2 py-1 rounded-full bg-muted font-medium">{s.plan}</span>
+                            </td>
+                            <td className="py-3 pr-4 text-sm">{s.sessionsCompleted}</td>
+                            <td className="py-3 pr-4 w-32">
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                                  <div className="h-full rounded-full" style={{ width: `${s.progress}%`, background: ACCENT }} />
+                                </div>
+                                <span className="text-xs text-muted-foreground w-8">{s.progress}%</span>
+                              </div>
+                            </td>
+                            <td className="py-3">
+                              <div className="flex items-center gap-2">
+                                <button onClick={() => openViewStudent(s)}
+                                  className="flex items-center gap-1 text-xs font-medium hover:underline"
+                                  style={{ color: ACCENT }}>
+                                  <Eye size={12} /> View
+                                </button>
+                                <button onClick={() => openEditStudent(s)}
+                                  className="flex items-center gap-1 text-xs font-medium hover:underline text-muted-foreground">
+                                  <Edit2 size={12} /> Edit
+                                </button>
+                                <button onClick={() => { setSelectedStudent(s); setMessageStudentOpen(true); }}
+                                  className="flex-none flex items-center gap-1 text-xs font-medium hover:underline text-muted-foreground">
+                                  <MessageSquare size={12} /> Msg
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="text-center py-10">
+                      <Users size={32} className="mx-auto mb-2 text-muted-foreground opacity-40" />
+                      <p className="text-sm text-muted-foreground">No students match the selected plan or class filters.</p>
+                      <button 
+                        onClick={() => {
+                          setStudentPlanFilter('All');
+                          setStudentClassFilter('All');
+                          setStudentSearchQuery('');
+                        }}
+                        className="mt-3 text-xs font-medium hover:underline" 
+                        style={{ color: ACCENT }}
+                      >
+                        Reset filters
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="card-wellness overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4">Student</th>
-                      <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4">Plan</th>
-                      <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4">Sessions</th>
-                      <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4">Progress</th>
-                      <th className="text-left text-xs font-medium text-muted-foreground py-3">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {students.map((s) => (
-                      <tr key={s.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                        <td className="py-3 pr-4">
-                          <div className="flex items-center gap-3">
-                            <img src={s.avatar} alt={s.name} className="w-8 h-8 rounded-full" />
-                            <div>
-                              <div className="text-sm font-medium">{s.name}</div>
-                              <div className="text-xs text-muted-foreground">Joined {s.joinedDays}d ago</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3 pr-4">
-                          <span className="text-xs px-2 py-1 rounded-full bg-muted font-medium">{s.plan}</span>
-                        </td>
-                        <td className="py-3 pr-4 text-sm">{s.sessionsCompleted}</td>
-                        <td className="py-3 pr-4 w-32">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                              <div className="h-full rounded-full" style={{ width: `${s.progress}%`, background: ACCENT }} />
-                            </div>
-                            <span className="text-xs text-muted-foreground w-8">{s.progress}%</span>
-                          </div>
-                        </td>
-                        <td className="py-3">
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => openViewStudent(s)}
-                              className="flex items-center gap-1 text-xs font-medium hover:underline"
-                              style={{ color: ACCENT }}>
-                              <Eye size={12} /> View
-                            </button>
-                            <button onClick={() => openEditStudent(s)}
-                              className="flex items-center gap-1 text-xs font-medium hover:underline text-muted-foreground">
-                              <Edit2 size={12} /> Edit
-                            </button>
-                            <button onClick={() => toast.success(`Message sent to ${s.name}`)}
-                              className="flex-none flex items-center gap-1 text-xs font-medium hover:underline text-muted-foreground">
-                              <MessageSquare size={12} /> Msg
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* ── Schedule ── */}
           {activeNav === 'schedule' && (
@@ -687,10 +927,13 @@ const InstructorDashboard = () => {
                       <span className="text-sm text-muted-foreground">{s.students} students registered</span>
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={() => toast.success(`Going live: ${s.title}`)}
-                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold text-white"
-                        style={{ background: ACCENT }}>
-                        <Play size={12} fill="currentColor" /> Start Session
+                      <button
+                        onClick={() => handleStartSession(s.id, s.title)}
+                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold transition-all"
+                        style={startedSessions.includes(s.id)
+                          ? { background: isDark ? 'hsl(133 20% 20%)' : 'hsl(133 20% 92%)', color: isDark ? 'hsl(133 25% 65%)' : 'hsl(133 20% 40%)' }
+                          : { background: ACCENT, color: 'white' }}>
+                        {startedSessions.includes(s.id) ? 'Started ✓' : <><Play size={12} fill="currentColor" /> Start Session</>}
                       </button>
                       <button onClick={() => openEditSession(s)}
                         className="px-4 py-2 rounded-xl text-xs font-semibold border border-border hover:bg-muted transition-colors">
@@ -783,8 +1026,8 @@ const InstructorDashboard = () => {
                 </div>
               </div>
               <div className="space-y-4">
-                {REVIEWS.map((r, i) => (
-                  <div key={i} className="card-wellness">
+                {reviews.map((r: any, i: number) => (
+                  <div key={r.id || i} className="card-wellness">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-sm">{r.student}</span>
@@ -793,9 +1036,69 @@ const InstructorDashboard = () => {
                       <span className="text-xs text-muted-foreground">{r.date}</span>
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">{r.comment}</p>
-                    <button onClick={() => toast.success('Reply sent!')} className="mt-3 text-xs font-medium hover:underline" style={{ color: ACCENT }}>
-                      Reply
-                    </button>
+                    
+                    {r.reply && (
+                      <div className="mt-3 p-3 rounded-xl bg-muted/60 border border-border/30 pl-4 border-l-4" style={{ borderLeftColor: ACCENT }}>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="text-xs font-bold text-foreground">Your Reply</span>
+                          <span className="text-[10px] text-muted-foreground font-medium bg-primary/10 text-primary px-1.5 py-0.5 rounded-full" style={{ background: 'hsl(27 87% 93%)', color: ACCENT }}>Instructor</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-relaxed">{r.reply}</p>
+                      </div>
+                    )}
+
+                    <div className="mt-3 flex gap-2">
+                      <button onClick={() => {
+                        setReplyingReviewId(replyingReviewId === r.id ? null : r.id);
+                        setReplyText(r.reply || '');
+                      }} className="text-xs font-medium hover:underline" style={{ color: ACCENT }}>
+                        {r.reply ? 'Edit Reply' : 'Reply'}
+                      </button>
+                      {r.reply && (
+                        <button onClick={() => {
+                          setReviews(prev => prev.map(item => item.id === r.id ? { ...item, reply: '' } : item));
+                          toast.error('Reply deleted');
+                        }} className="text-xs font-medium text-destructive hover:underline">
+                          Delete
+                        </button>
+                      )}
+                    </div>
+
+                    {replyingReviewId === r.id && (
+                      <div className="mt-3 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <textarea
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          placeholder="Type your wellness reply..."
+                          rows={2}
+                          className="w-full p-2.5 text-xs bg-muted border border-border rounded-xl focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              if (!replyText.trim()) { toast.error('Reply cannot be empty'); return; }
+                              setReviews(prev => prev.map(item => item.id === r.id ? { ...item, reply: replyText } : item));
+                              setReplyingReviewId(null);
+                              setReplyText('');
+                              toast.success('Reply submitted successfully!');
+                            }}
+                            className="px-3 py-1.5 rounded-lg text-white font-semibold text-xs transition-opacity hover:opacity-90"
+                            style={{ background: ACCENT }}
+                          >
+                            Post Reply
+                          </button>
+                          <button
+                            onClick={() => {
+                              setReplyingReviewId(null);
+                              setReplyText('');
+                            }}
+                            className="px-3 py-1.5 rounded-lg border border-border text-xs font-semibold hover:bg-muted"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -1021,7 +1324,7 @@ const InstructorDashboard = () => {
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-border hover:bg-muted transition-colors flex items-center justify-center gap-2">
                 <Edit2 size={14} /> Edit Profile
               </button>
-              <button onClick={() => { toast.success(`Message sent to ${selectedStudent.name}`); setViewStudentOpen(false); }}
+              <button onClick={() => { setMessageStudentOpen(true); setViewStudentOpen(false); }}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-border hover:bg-muted transition-colors flex items-center justify-center gap-2">
                 <MessageSquare size={14} /> Send Message
               </button>
@@ -1089,6 +1392,42 @@ const InstructorDashboard = () => {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* ── Modal: Message Student ── */}
+      <Modal open={messageStudentOpen} onClose={() => { setMessageStudentOpen(false); setMessageText(''); }} title="Message Student" subtitle={selectedStudent ? `Send a custom message to ${selectedStudent.name}` : ''} accentColor={ACCENT}>
+        <div className="space-y-4">
+          <FormField label="Message Content" required>
+            <textarea
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              placeholder="Type your personal message or session reminder here..."
+              rows={4}
+              className={textareaClass}
+            />
+          </FormField>
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => { setMessageStudentOpen(false); setMessageText(''); }}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-border hover:bg-muted transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                if (!messageText.trim()) { toast.error('Message cannot be empty'); return; }
+                toast.success(`Message successfully sent to ${selectedStudent?.name || 'student'}! 📩`);
+                setMessageStudentOpen(false);
+                setMessageText('');
+              }}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+              style={{ background: ACCENT }}
+            >
+              Send Message
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
