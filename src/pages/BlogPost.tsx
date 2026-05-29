@@ -3,11 +3,13 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ScrollToTop } from '@/components/layout/ScrollToTop';
 import { useScrollTop } from '@/hooks/useScrollTop';
+import { useTheme } from '@/hooks/useTheme';
 import { ArrowLeft, Clock, Tag, Share2, BookOpen } from 'lucide-react';
 import { BLOG_POSTS } from '@/constants';
 
 const BlogPost = () => {
   useScrollTop();
+  const { isDark } = useTheme();
   const { id } = useParams();
   const post = BLOG_POSTS.find((p) => p.id === id) || BLOG_POSTS[0];
   const related = BLOG_POSTS.filter((p) => p.id !== post.id).slice(0, 3);
@@ -85,7 +87,7 @@ const BlogPost = () => {
         </div>
 
         {/* Related Articles */}
-        <section className="py-12 px-4 md:px-8" style={{ background: 'hsl(133 20% 96%)' }}>
+        <section className="py-12 px-4 md:px-8" style={{ background: isDark ? 'hsl(150 15% 12%)' : 'hsl(133 20% 96%)' }}>
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center gap-2 mb-7">
               <BookOpen size={18} style={{ color: 'hsl(133 18% 59%)' }} />

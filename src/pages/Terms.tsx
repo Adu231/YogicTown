@@ -2,10 +2,12 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ScrollToTop } from '@/components/layout/ScrollToTop';
 import { useScrollTop } from '@/hooks/useScrollTop';
+import { useTheme } from '@/hooks/useTheme';
 import { FileText } from 'lucide-react';
 
 const Terms = () => {
   useScrollTop();
+  const { isDark } = useTheme();
   const sections = [
     { title: '1. Acceptance of Terms', content: 'By accessing or using YogicTown ("Platform"), you agree to be bound by these Terms and Conditions. If you do not agree to all terms, you may not use the Platform. These terms apply to all visitors, users, instructors, and businesses who access the Platform.' },
     { title: '2. Eligibility and Accounts', content: 'You must be at least 16 years old to use YogicTown. You are responsible for maintaining the confidentiality of your account credentials and for all activities under your account. You agree to provide accurate, current information and to notify us immediately of any unauthorized account use. One person may not maintain multiple accounts.' },
@@ -22,7 +24,7 @@ const Terms = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="pt-16">
-        <section className="section-padding" style={{ background: 'linear-gradient(135deg, hsl(133 20% 96%) 0%, hsl(60 17% 98%) 100%)' }}>
+        <section className="section-padding" style={{ background: isDark ? 'linear-gradient(135deg, hsl(150 15% 12%) 0%, hsl(150 15% 8%) 100%)' : 'linear-gradient(135deg, hsl(133 20% 96%) 0%, hsl(60 17% 98%) 100%)' }}>
           <div className="max-w-3xl mx-auto text-center">
             <div className="tag-pill mx-auto mb-5 w-fit"><FileText size={12} /> Legal</div>
             <h1 className="text-5xl font-bold mb-5">Terms &<br /><span className="italic" style={{ color: 'hsl(27 87% 60%)' }}>Conditions</span></h1>

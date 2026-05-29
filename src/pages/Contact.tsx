@@ -3,6 +3,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ScrollToTop } from '@/components/layout/ScrollToTop';
 import { useScrollTop } from '@/hooks/useScrollTop';
+import { useTheme } from '@/hooks/useTheme';
 import { Mail, Phone, MapPin, Clock, CheckCircle, MessageSquare, Users, HelpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -10,6 +11,7 @@ const CONTACT_TOPICS = ['General Inquiry', 'Technical Support', 'Billing & Payme
 
 const Contact = () => {
   useScrollTop();
+  const { isDark } = useTheme();
   const [form, setForm] = useState({ name: '', email: '', topic: '', message: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
@@ -41,7 +43,7 @@ const Contact = () => {
       <Navbar />
       <main className="pt-16">
         {/* Hero */}
-        <section className="section-padding" style={{ background: 'linear-gradient(135deg, hsl(133 20% 96%) 0%, hsl(60 17% 98%) 100%)' }}>
+        <section className="section-padding" style={{ background: isDark ? 'linear-gradient(135deg, hsl(150 15% 12%) 0%, hsl(150 15% 8%) 100%)' : 'linear-gradient(135deg, hsl(133 20% 96%) 0%, hsl(60 17% 98%) 100%)' }}>
           <div className="max-w-3xl mx-auto text-center">
             <div className="tag-pill mx-auto mb-5 w-fit"><MessageSquare size={12} /> Get in Touch</div>
             <h1 className="text-5xl font-bold mb-5">We Are Here for You</h1>
@@ -60,12 +62,12 @@ const Contact = () => {
               const Icon = opt.icon;
               return (
                 <div key={i} className="card-wellness text-center">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: 'hsl(133 20% 92%)' }}>
-                    <Icon size={20} style={{ color: 'hsl(133 18% 59%)' }} />
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: isDark ? 'hsl(150 12% 14%)' : 'hsl(133 20% 92%)' }}>
+                    <Icon size={20} style={{ color: isDark ? 'hsl(133 25% 75%)' : 'hsl(133 18% 59%)' }} />
                   </div>
                   <h3 className="font-semibold mb-1">{opt.title}</h3>
                   <p className="text-sm text-muted-foreground mb-3">{opt.desc}</p>
-                  <a href={opt.href} className="text-sm font-medium hover:underline" style={{ color: 'hsl(133 18% 59%)' }}>{opt.action} →</a>
+                  <a href={opt.href} className="text-sm font-medium hover:underline" style={{ color: isDark ? 'hsl(133 25% 75%)' : 'hsl(133 18% 59%)' }}>{opt.action} →</a>
                 </div>
               );
             })}
@@ -80,12 +82,12 @@ const Contact = () => {
 
                 {sent ? (
                   <div className="text-center py-10">
-                    <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: 'hsl(133 20% 92%)' }}>
-                      <CheckCircle size={28} style={{ color: 'hsl(133 18% 59%)' }} />
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ background: isDark ? 'hsl(150 12% 14%)' : 'hsl(133 20% 92%)' }}>
+                      <CheckCircle size={28} style={{ color: isDark ? 'hsl(133 25% 75%)' : 'hsl(133 18% 59%)' }} />
                     </div>
                     <h3 className="text-xl font-semibold mb-2">Message Received!</h3>
                     <p className="text-sm text-muted-foreground mb-4">Thank you for reaching out. Our team will get back to you within 24 hours at <strong>{form.email}</strong>.</p>
-                    <button onClick={() => { setSent(false); setForm({ name: '', email: '', topic: '', message: '' }); }} className="text-sm font-medium hover:underline" style={{ color: 'hsl(133 18% 59%)' }}>
+                    <button onClick={() => { setSent(false); setForm({ name: '', email: '', topic: '', message: '' }); }} className="text-sm font-medium hover:underline" style={{ color: isDark ? 'hsl(133 25% 75%)' : 'hsl(133 18% 59%)' }}>
                       Send Another Message
                     </button>
                   </div>
@@ -141,8 +143,8 @@ const Contact = () => {
                     const Icon = item.icon;
                     return (
                       <div key={i} className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'hsl(133 20% 92%)' }}>
-                          <Icon size={15} style={{ color: 'hsl(133 18% 59%)' }} />
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ background: isDark ? 'hsl(150 12% 14%)' : 'hsl(133 20% 92%)' }}>
+                          <Icon size={15} style={{ color: isDark ? 'hsl(133 25% 75%)' : 'hsl(133 18% 59%)' }} />
                         </div>
                         <div>
                           <div className="text-xs text-muted-foreground">{item.label}</div>
@@ -164,7 +166,7 @@ const Contact = () => {
                   <div className="flex justify-between"><span className="text-muted-foreground">Saturday</span><span>10 AM – 5 PM IST</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Sunday</span><span className="text-muted-foreground">Closed</span></div>
                 </div>
-                <div className="mt-3 px-3 py-2 rounded-lg text-xs font-medium" style={{ background: 'hsl(133 20% 92%)', color: 'hsl(133 20% 35%)' }}>
+                <div className="mt-3 px-3 py-2 rounded-lg text-xs font-medium" style={{ background: isDark ? 'hsl(150 12% 14%)' : 'hsl(133 20% 92%)', color: isDark ? 'hsl(133 25% 75%)' : 'hsl(133 20% 35%)' }}>
                   ✓ Typical response time: Under 4 hours on business days
                 </div>
               </div>

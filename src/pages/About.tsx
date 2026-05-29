@@ -2,6 +2,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ScrollToTop } from '@/components/layout/ScrollToTop';
 import { useScrollTop } from '@/hooks/useScrollTop';
+import { useTheme } from '@/hooks/useTheme';
 import { CTABannerSection } from '@/components/features/CTABannerSection';
 import { AnimatedCounter } from '@/components/features/AnimatedCounter';
 import { Leaf, Heart, Globe, Award, Users, Sparkles } from 'lucide-react';
@@ -23,13 +24,14 @@ const VALUES = [
 
 const About = () => {
   useScrollTop();
+  const { isDark } = useTheme();
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="pt-16">
         {/* Hero */}
-        <section className="section-padding" style={{ background: 'linear-gradient(135deg, hsl(133 20% 96%) 0%, hsl(60 17% 98%) 100%)' }}>
+        <section className="section-padding" style={{ background: isDark ? 'linear-gradient(135deg, hsl(150 15% 12%) 0%, hsl(150 15% 8%) 100%)' : 'linear-gradient(135deg, hsl(133 20% 96%) 0%, hsl(60 17% 98%) 100%)' }}>
           <div className="max-w-4xl mx-auto text-center">
             <div className="tag-pill mx-auto mb-5 w-fit"><Leaf size={12} /> Our Story</div>
             <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
@@ -94,8 +96,8 @@ const About = () => {
                 const Icon = v.icon;
                 return (
                   <div key={i} className="card-wellness text-center">
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'hsl(133 20% 92%)' }}>
-                      <Icon size={22} style={{ color: 'hsl(133 18% 59%)' }} />
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: isDark ? 'hsl(150 12% 14%)' : 'hsl(133 20% 92%)' }}>
+                      <Icon size={22} style={{ color: isDark ? 'hsl(133 25% 75%)' : 'hsl(133 18% 59%)' }} />
                     </div>
                     <h3 className="font-semibold mb-2">{v.title}</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">{v.desc}</p>
@@ -107,7 +109,7 @@ const About = () => {
         </section>
 
         {/* Team */}
-        <section className="section-padding" style={{ background: 'hsl(133 20% 96%)' }}>
+        <section className="section-padding" style={{ background: isDark ? 'hsl(150 15% 12%)' : 'hsl(133 20% 96%)' }}>
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-4xl font-bold mb-3">Meet the Team</h2>
@@ -116,7 +118,7 @@ const About = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {TEAM.map((member, i) => (
                 <div key={i} className="card-wellness text-center">
-                  <img src={member.avatar} alt={member.name} className="w-20 h-20 rounded-full object-cover mx-auto mb-4 border-4" style={{ borderColor: 'hsl(133 20% 92%)' }} />
+                  <img src={member.avatar} alt={member.name} className="w-20 h-20 rounded-full object-cover mx-auto mb-4 border-4" style={{ borderColor: isDark ? 'hsl(150 12% 20%)' : 'hsl(133 20% 92%)' }} />
                   <h3 className="font-semibold mb-0.5">{member.name}</h3>
                   <div className="tag-orange mx-auto w-fit mb-3 text-xs">{member.role}</div>
                   <p className="text-xs text-muted-foreground leading-relaxed">{member.bio}</p>
@@ -141,7 +143,7 @@ const About = () => {
         </section>
 
         {/* Hiring CTA */}
-        <section className="section-padding" style={{ background: 'hsl(133 20% 96%)' }}>
+        <section className="section-padding" style={{ background: isDark ? 'hsl(150 15% 12%)' : 'hsl(133 20% 96%)' }}>
           <div className="max-w-2xl mx-auto text-center">
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ background: 'hsl(133 18% 59%)' }}>
               <Users size={24} className="text-white" />

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Camera, Check, Leaf, MapPin, Mail, Phone, Star, Award, Edit3 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/hooks/useTheme';
 import { updateProfile } from '@/lib/auth';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/layout/Navbar';
@@ -12,6 +13,7 @@ import { useScrollTop } from '@/hooks/useScrollTop';
 const Profile = () => {
   useScrollTop();
   const { user, refreshUser } = useAuth();
+  const { isDark } = useTheme();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -98,7 +100,7 @@ const Profile = () => {
                     { value: '83', label: 'Score' },
                   ].map((s, i) => (
                     <div key={i}>
-                      <div className="text-xl font-bold" style={{ color: 'hsl(133 20% 40%)', fontFamily: 'Playfair Display, serif' }}>{s.value}</div>
+                      <div className="text-xl font-bold" style={{ color: isDark ? 'hsl(133 25% 75%)' : 'hsl(133 20% 40%)', fontFamily: 'Playfair Display, serif' }}>{s.value}</div>
                       <div className="text-xs text-muted-foreground">{s.label}</div>
                     </div>
                   ))}
@@ -170,10 +172,10 @@ const Profile = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {BADGES.map((badge, i) => (
                     <div key={i} className={`p-3 rounded-xl text-center border ${badge.earned ? 'border-primary/30' : 'border-border opacity-40'}`}
-                      style={badge.earned ? { background: 'hsl(133 20% 96%)' } : {}}>
+                      style={badge.earned ? { background: isDark ? 'hsl(150 12% 14%)' : 'hsl(133 20% 96%)' } : {}}>
                       <div className="text-2xl mb-1">{badge.icon}</div>
                       <div className="text-xs font-medium">{badge.label}</div>
-                      {badge.earned && <div className="text-xs mt-1" style={{ color: 'hsl(133 18% 59%)' }}>Earned</div>}
+                      {badge.earned && <div className="text-xs mt-1" style={{ color: isDark ? 'hsl(133 25% 75%)' : 'hsl(133 18% 59%)' }}>Earned</div>}
                     </div>
                   ))}
                 </div>
