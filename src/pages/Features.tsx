@@ -2,6 +2,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ScrollToTop } from '@/components/layout/ScrollToTop';
 import { useScrollTop } from '@/hooks/useScrollTop';
+import { useTheme } from '@/hooks/useTheme';
 import { CTABannerSection } from '@/components/features/CTABannerSection';
 import { Link } from 'react-router-dom';
 import { Brain, Heart, Users, Video, Calendar, BarChart3, Leaf, Zap, Shield, Smartphone, ArrowRight } from 'lucide-react';
@@ -67,6 +68,7 @@ const TECHNICAL_FEATURES = [
 
 const FeaturesPage = () => {
   useScrollTop();
+  const { isDark } = useTheme();
   const { user } = useAuth();
 
   return (
@@ -74,7 +76,7 @@ const FeaturesPage = () => {
       <Navbar />
       <main className="pt-16">
         {/* Hero */}
-        <section className="section-padding" style={{ background: 'linear-gradient(135deg, hsl(133 20% 96%) 0%, hsl(60 17% 98%) 100%)' }}>
+        <section className="section-padding" style={{ background: isDark ? 'linear-gradient(135deg, hsl(150 15% 12%) 0%, hsl(150 15% 8%) 100%)' : 'linear-gradient(135deg, hsl(133 20% 96%) 0%, hsl(60 17% 98%) 100%)' }}>
           <div className="max-w-4xl mx-auto text-center">
             <div className="tag-pill mx-auto mb-5 w-fit"><Leaf size={12} /> Platform Features</div>
             <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
@@ -121,7 +123,7 @@ const FeaturesPage = () => {
         </section>
 
         {/* Technical Features */}
-        <section className="section-padding" style={{ background: 'hsl(133 20% 96%)' }}>
+        <section className="section-padding" style={{ background: isDark ? 'hsl(150 15% 12%)' : 'hsl(133 20% 96%)' }}>
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-3">Built for Real Life</h2>

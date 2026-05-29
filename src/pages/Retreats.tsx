@@ -2,6 +2,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ScrollToTop } from '@/components/layout/ScrollToTop';
 import { useScrollTop } from '@/hooks/useScrollTop';
+import { useTheme } from '@/hooks/useTheme';
 import { MapPin, Calendar, Star, Users, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { RETREATS } from '@/constants';
@@ -10,6 +11,7 @@ import retreatImage from '@/assets/retreat-landscape.jpg';
 
 const Retreats = () => {
   useScrollTop();
+  const { isDark } = useTheme();
 
   return (
     <div className="min-h-screen bg-background">
@@ -93,7 +95,7 @@ const Retreats = () => {
             </div>
 
             {/* Partner CTA */}
-            <div className="rounded-3xl p-8 md:p-10 text-center border border-border" style={{ background: 'hsl(133 20% 96%)' }}>
+            <div className="rounded-3xl p-8 md:p-10 text-center border border-border" style={{ background: isDark ? 'hsl(150 12% 14%)' : 'hsl(133 20% 96%)' }}>
               <h2 className="text-3xl font-bold mb-3">Are You a Retreat Organizer?</h2>
               <p className="text-muted-foreground mb-6 max-w-xl mx-auto">List your retreat on YogicTown and reach 120,000+ wellness seekers. We handle discovery, booking, and payments.</p>
               <Link to="/contact" className="btn-primary inline-flex items-center gap-2">

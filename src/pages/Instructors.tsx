@@ -3,6 +3,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ScrollToTop } from '@/components/layout/ScrollToTop';
 import { useScrollTop } from '@/hooks/useScrollTop';
+import { useTheme } from '@/hooks/useTheme';
 import { Star, CheckCircle, Search, Filter, ArrowRight, SlidersHorizontal } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { INSTRUCTORS } from '@/constants';
@@ -12,6 +13,7 @@ const SPECIALTIES = ['All', 'Hatha Yoga', 'Vinyasa', 'Ashtanga', 'Yin Yoga', 'Ku
 
 const Instructors = () => {
   useScrollTop();
+  const { isDark } = useTheme();
   const [search, setSearch] = useState('');
   const [specialty, setSpecialty] = useState('All');
   
@@ -68,7 +70,7 @@ const Instructors = () => {
       <Navbar />
       <main className="pt-16">
         {/* Hero */}
-        <section className="section-padding" style={{ background: 'linear-gradient(135deg, hsl(133 20% 96%) 0%, hsl(60 17% 98%) 100%)' }}>
+        <section className="section-padding" style={{ background: isDark ? 'linear-gradient(135deg, hsl(150 15% 12%) 0%, hsl(150 15% 8%) 100%)' : 'linear-gradient(135deg, hsl(133 20% 96%) 0%, hsl(60 17% 98%) 100%)' }}>
           <div className="max-w-4xl mx-auto text-center">
             <div className="tag-pill mx-auto mb-5 w-fit"><Star size={12} /> Certified Instructors</div>
             <h1 className="text-5xl font-bold mb-5">

@@ -76,7 +76,7 @@ const PricingPage = () => {
                       <td className="py-3 px-4 text-muted-foreground">{row.feature}</td>
                       <td className="py-3 px-3 text-center">{renderVal(row.seeker)}</td>
                       <td className="py-3 px-3 text-center">{renderVal(row.practitioner)}</td>
-                      <td className="py-3 px-3 text-center" style={{ background: 'hsl(133 20% 98%)' }}>{renderVal(row.yogi)}</td>
+                      <td className="py-3 px-3 text-center" style={{ background: isDark ? 'hsl(150 12% 14%)' : 'hsl(133 20% 98%)' }}>{renderVal(row.yogi)}</td>
                       <td className="py-3 px-3 text-center">{renderVal(row.master)}</td>
                     </tr>
                   ))}

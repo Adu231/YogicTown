@@ -347,7 +347,7 @@ const InstructorDashboard = () => {
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'hsl(133 18% 59%)' }}>
             <Leaf size={16} className="text-white" />
           </div>
-          <span className="font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'hsl(150 15% 12%)' }}>
+          <span className="font-bold text-[#101f18] dark:text-foreground" style={{ fontFamily: 'Playfair Display, serif' }}>
             Yogic<span style={{ color: ACCENT }}>Town</span>
           </span>
         </Link>

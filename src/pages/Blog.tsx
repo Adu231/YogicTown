@@ -4,6 +4,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ScrollToTop } from '@/components/layout/ScrollToTop';
 import { useScrollTop } from '@/hooks/useScrollTop';
+import { useTheme } from '@/hooks/useTheme';
 import { Search, Clock, ArrowRight, BookOpen } from 'lucide-react';
 import { BLOG_POSTS } from '@/constants';
 import { CTABannerSection } from '@/components/features/CTABannerSection';
@@ -12,6 +13,7 @@ const CATEGORIES = ['All', 'Yoga Science', 'Meditation', 'Ayurveda', 'Retreats',
 
 const Blog = () => {
   useScrollTop();
+  const { isDark } = useTheme();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [sortBy, setSortBy] = useState('latest');
@@ -54,10 +56,10 @@ const Blog = () => {
       <Navbar />
       <main className="pt-16">
         {/* Hero */}
-        <section className="section-padding" style={{ background: 'linear-gradient(135deg, hsl(133 20% 96%) 0%, hsl(60 17% 98%) 100%)' }}>
+        <section className="section-padding bg-gradient-to-br from-background/80 to-muted/50 dark:from-muted/20 dark:to-background/70">
           <div className="max-w-3xl mx-auto text-center">
             <div className="tag-pill mx-auto mb-5 w-fit"><BookOpen size={12} /> Wellness Journal</div>
-            <h1 className="text-5xl font-bold mb-5">Insights for Your<br /><span className="italic" style={{ color: 'hsl(27 87% 60%)' }}>Wellness Journey</span></h1>
+            <h1 className="text-5xl font-bold mb-5">Insights for Your<br /><span className="italic text-orange-500">Wellness Journey</span></h1>
             <p className="text-xl text-muted-foreground mb-8">Expert articles on yoga, meditation, Ayurveda, nutrition, and spiritual living — curated by certified practitioners.</p>
             <div className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto">
               <div className="relative flex-1">
@@ -84,8 +86,7 @@ const Blog = () => {
           <div className="flex flex-wrap gap-2 mb-8">
             {CATEGORIES.map((cat) => (
               <button key={cat} onClick={() => setCategory(cat)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${category === cat ? 'border-transparent text-white' : 'border-border hover:border-primary/40'}`}
-                style={category === cat ? { background: 'hsl(133 18% 59%)' } : {}}>
+                className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${category === cat ? 'border-transparent text-white bg-green-500' : 'border-border hover:border-primary/40'}`}>
                 {cat}
               </button>
             ))}
@@ -132,7 +133,7 @@ const Blog = () => {
                     <div className="flex items-center gap-2 mb-3">
                       <div className="tag-pill">{post.category}</div>
                     </div>
-                    <h3 className="font-bold text-base mb-2 leading-snug group-hover:text-primary transition-colors" style={{ color: 'inherit' }}>{post.title}</h3>
+                    <h3 className="font-bold text-base mb-2 leading-snug group-hover:text-primary transition-colors">{post.title}</h3>
                     <p className="text-xs text-muted-foreground leading-relaxed mb-4 line-clamp-2">{post.excerpt}</p>
                     <div className="flex items-center gap-2">
                       <img src={post.authorAvatar} alt={post.author} className="w-7 h-7 rounded-full object-cover" />
@@ -149,7 +150,7 @@ const Blog = () => {
               <div className="text-5xl mb-4">🌿</div>
               <h3 className="text-lg font-semibold mb-2">No articles found</h3>
               <p className="text-muted-foreground text-sm">Try a different search or category.</p>
-              <button onClick={() => { setSearch(''); setCategory('All'); setSortBy('latest'); }} className="mt-4 text-sm font-medium hover:underline" style={{ color: 'hsl(133 18% 59%)' }}>
+              <button onClick={() => { setSearch(''); setCategory('All'); setSortBy('latest'); }} className="mt-4 text-sm font-medium hover:underline text-green-500">
                 Clear filters
               </button>
             </div>

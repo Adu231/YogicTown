@@ -3,6 +3,7 @@ import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from '@/hooks/useTheme';
 
 import Index from './pages/Index';
 import About from './pages/About';
@@ -34,49 +35,51 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/features" element={<FeaturesPage />} />
-          <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/payment" element={<Payment />} />
-          <Route path="/contact" element={<Contact />} />
+    <ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/features" element={<FeaturesPage />} />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/payment" element={<Payment />} />
+            <Route path="/contact" element={<Contact />} />
 
-          {/* Role-based Dashboards */}
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/instructor-dashboard" element={<InstructorDashboard />} />
-          <Route path="/organizer-dashboard" element={<OrganizerDashboard />} />
-          <Route path="/coach-dashboard" element={<CoachDashboard />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            {/* Role-based Dashboards */}
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/instructor-dashboard" element={<InstructorDashboard />} />
+            <Route path="/organizer-dashboard" element={<OrganizerDashboard />} />
+            <Route path="/coach-dashboard" element={<CoachDashboard />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
 
-          {/* Auth */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
+            {/* Auth */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
 
-          {/* User */}
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/settings" element={<Settings />} />
+            {/* User */}
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
 
-          {/* Content */}
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/blog/:id" element={<BlogPost />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/instructors" element={<Instructors />} />
-          <Route path="/apply-instructor" element={<ApplyInstructor />} />
-          <Route path="/retreats" element={<Retreats />} />
+            {/* Content */}
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:id" element={<BlogPost />} />
+            <Route path="/faq" element={<FAQ />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/instructors" element={<Instructors />} />
+            <Route path="/apply-instructor" element={<ApplyInstructor />} />
+            <Route path="/retreats" element={<Retreats />} />
 
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

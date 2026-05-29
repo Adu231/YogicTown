@@ -50,7 +50,7 @@ export function Navbar() {
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'hsl(133 18% 59%)' }}>
             <Leaf size={16} className="text-white" />
           </div>
-          <span style={{ fontFamily: 'Playfair Display, serif', color: 'hsl(150 15% 12%)' }} className="dark:text-foreground">
+          <span style={{ fontFamily: 'Playfair Display, serif' }} className="text-[#101f18] dark:text-foreground">
             Yogic<span style={{ color: 'hsl(27 87% 67%)' }}>Town</span>
           </span>
         </Link>

@@ -41,7 +41,7 @@ export function PricingSection() {
               className={`px-5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${isYearly ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground'}`}
             >
               Yearly
-              <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: 'hsl(133 20% 92%)', color: 'hsl(133 20% 35%)' }}>
+              <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: isDark ? 'hsl(133 18% 18%)' : 'hsl(133 20% 92%)', color: isDark ? 'hsl(133 25% 75%)' : 'hsl(133 20% 35%)' }}>
                 Save 25%
               </span>
             </button>
