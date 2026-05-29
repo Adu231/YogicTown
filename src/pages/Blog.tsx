@@ -14,14 +14,40 @@ const Blog = () => {
   useScrollTop();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
+  const [sortBy, setSortBy] = useState('latest');
 
+  // Filter posts
   const filtered = BLOG_POSTS.filter((post) => {
     const matchesCat = category === 'All' || post.category === category;
-    const matchesSearch = !search || post.title.toLowerCase().includes(search.toLowerCase()) || post.excerpt.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = !search || 
+      post.title.toLowerCase().includes(search.toLowerCase()) || 
+      post.excerpt.toLowerCase().includes(search.toLowerCase()) ||
+      post.author.toLowerCase().includes(search.toLowerCase()) ||
+      (post.tags && post.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase())));
     return matchesCat && matchesSearch;
   });
 
-  const featured = BLOG_POSTS[0];
+  // Sort filtered posts
+  const sortedAndFiltered = [...filtered].sort((a, b) => {
+    if (sortBy === 'latest') {
+      return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+    }
+    if (sortBy === 'oldest') {
+      return new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime();
+    }
+    if (sortBy === 'read-time') {
+      const minA = parseInt(a.readTime) || 0;
+      const minB = parseInt(b.readTime) || 0;
+      return minA - minB;
+    }
+    if (sortBy === 'title') {
+      return a.title.localeCompare(b.title);
+    }
+    return 0;
+  });
+
+  const featured = sortedAndFiltered[0];
+  const gridPosts = sortedAndFiltered.slice(1);
 
   return (
     <div className="min-h-screen bg-background">
@@ -33,42 +59,27 @@ const Blog = () => {
             <div className="tag-pill mx-auto mb-5 w-fit"><BookOpen size={12} /> Wellness Journal</div>
             <h1 className="text-5xl font-bold mb-5">Insights for Your<br /><span className="italic" style={{ color: 'hsl(27 87% 60%)' }}>Wellness Journey</span></h1>
             <p className="text-xl text-muted-foreground mb-8">Expert articles on yoga, meditation, Ayurveda, nutrition, and spiritual living — curated by certified practitioners.</p>
-            <div className="relative max-w-md mx-auto">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search articles..."
-                className="w-full pl-12 pr-4 py-3 rounded-2xl bg-background border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm shadow-sm" />
+            <div className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto">
+              <div className="relative flex-1">
+                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search articles by title, tags, or author..."
+                  className="w-full pl-12 pr-4 py-3 rounded-2xl bg-background border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm shadow-sm" />
+              </div>
+              <select 
+                value={sortBy} 
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-4 py-3 rounded-2xl bg-background border border-border focus:outline-none focus:ring-2 focus:ring-primary text-sm shadow-sm cursor-pointer font-semibold text-muted-foreground"
+              >
+                <option value="latest">Latest Articles</option>
+                <option value="oldest">Oldest Articles</option>
+                <option value="read-time">Shortest Read</option>
+                <option value="title">Alphabetical (A-Z)</option>
+              </select>
             </div>
           </div>
         </section>
 
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
-          {/* Featured Post */}
-          <div className="mb-12">
-            <div className="grid grid-cols-1 lg:grid-cols-2 rounded-3xl overflow-hidden border border-border shadow-sm">
-              <div className="relative aspect-[16/9] lg:aspect-auto">
-                <img src={featured.thumbnail} alt={featured.title} className="w-full h-full object-cover" />
-                <div className="absolute top-4 left-4">
-                  <div className="tag-orange">Featured</div>
-                </div>
-              </div>
-              <div className="p-8 flex flex-col justify-center bg-card">
-                <div className="tag-pill mb-3 w-fit">{featured.category}</div>
-                <h2 className="text-2xl font-bold mb-3 leading-tight">{featured.title}</h2>
-                <p className="text-muted-foreground text-sm leading-relaxed mb-5">{featured.excerpt}</p>
-                <div className="flex items-center gap-3 mb-5">
-                  <img src={featured.authorAvatar} alt={featured.author} className="w-8 h-8 rounded-full object-cover" />
-                  <div>
-                    <div className="text-sm font-medium">{featured.author}</div>
-                    <div className="text-xs text-muted-foreground flex items-center gap-1"><Clock size={10} /> {featured.readTime} · {featured.publishedAt}</div>
-                  </div>
-                </div>
-                <Link to={`/blog/${featured.id}`} className="btn-primary w-fit">
-                  Read Article <ArrowRight size={16} />
-                </Link>
-              </div>
-            </div>
-          </div>
-
           {/* Category Filter */}
           <div className="flex flex-wrap gap-2 mb-8">
             {CATEGORIES.map((cat) => (
@@ -80,10 +91,39 @@ const Blog = () => {
             ))}
           </div>
 
+          {/* Featured Post */}
+          {featured && (
+            <div className="mb-12 animate-in fade-in duration-300">
+              <div className="grid grid-cols-1 lg:grid-cols-2 rounded-3xl overflow-hidden border border-border shadow-sm">
+                <div className="relative aspect-[16/9] lg:aspect-auto">
+                  <img src={featured.thumbnail} alt={featured.title} className="w-full h-full object-cover" />
+                  <div className="absolute top-4 left-4">
+                    <div className="tag-orange">Featured</div>
+                  </div>
+                </div>
+                <div className="p-8 flex flex-col justify-center bg-card">
+                  <div className="tag-pill mb-3 w-fit">{featured.category}</div>
+                  <h2 className="text-2xl font-bold mb-3 leading-tight">{featured.title}</h2>
+                  <p className="text-muted-foreground text-sm leading-relaxed mb-5">{featured.excerpt}</p>
+                  <div className="flex items-center gap-3 mb-5">
+                    <img src={featured.authorAvatar} alt={featured.author} className="w-8 h-8 rounded-full object-cover" />
+                    <div>
+                      <div className="text-sm font-medium">{featured.author}</div>
+                      <div className="text-xs text-muted-foreground flex items-center gap-1"><Clock size={10} /> {featured.readTime} · {featured.publishedAt}</div>
+                    </div>
+                  </div>
+                  <Link to={`/blog/${featured.id}`} className="btn-primary w-fit">
+                    Read Article <ArrowRight size={16} />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Articles Grid */}
-          {filtered.length > 0 ? (
+          {gridPosts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.slice(1).map((post) => (
+              {gridPosts.map((post) => (
                 <Link key={post.id} to={`/blog/${post.id}`} className="card-wellness group overflow-hidden p-0">
                   <div className="aspect-[16/9] overflow-hidden">
                     <img src={post.thumbnail} alt={post.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
@@ -104,18 +144,17 @@ const Blog = () => {
                 </Link>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-20">
+          ) : !featured ? (
+            <div className="text-center py-20 animate-in fade-in duration-300">
               <div className="text-5xl mb-4">🌿</div>
               <h3 className="text-lg font-semibold mb-2">No articles found</h3>
               <p className="text-muted-foreground text-sm">Try a different search or category.</p>
-              <button onClick={() => { setSearch(''); setCategory('All'); }} className="mt-4 text-sm font-medium hover:underline" style={{ color: 'hsl(133 18% 59%)' }}>
+              <button onClick={() => { setSearch(''); setCategory('All'); setSortBy('latest'); }} className="mt-4 text-sm font-medium hover:underline" style={{ color: 'hsl(133 18% 59%)' }}>
                 Clear filters
               </button>
             </div>
-          )}
+          ) : null}
         </div>
-
         <CTABannerSection />
       </main>
       <Footer />
