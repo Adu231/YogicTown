@@ -95,10 +95,10 @@ const SCHEDULE_EVENTS: Record<string, { title: string; time: string; duration: s
 };
 
 const COMMUNITY_POSTS = [
-  { id: 1, user: 'Meera S.', avatar: '[ui-avatars.com](https://ui-avatars.com/api/?name=Meera+S&background=84A98C&color=fff)', time: '2h ago', content: 'Just completed my 30-day yoga challenge! The transformation has been incredible. My flexibility improved by so much 🙏', likes: 48, comments: 12, tag: 'Achievement' },
-  { id: 2, user: 'Amit K.', avatar: '[ui-avatars.com](https://ui-avatars.com/api/?name=Amit+K&background=F4A261&color=fff)', time: '5h ago', content: 'Looking for a meditation buddy! Anyone interested in joining a virtual sunrise meditation at 6 AM IST daily?', likes: 23, comments: 8, tag: 'Community' },
-  { id: 3, user: 'Priya R.', avatar: '[ui-avatars.com](https://ui-avatars.com/api/?name=Priya+R&background=5B8FB9&color=fff)', time: '1d ago', content: 'The Rishikesh retreat was life-changing. Sharing my notes and insights from the week-long Panchakarma + yoga retreat.', likes: 91, comments: 27, tag: 'Retreat' },
-  { id: 4, user: 'Ananya K.', avatar: '[ui-avatars.com](https://ui-avatars.com/api/?name=Ananya+K&background=A98B84&color=fff)', time: '2d ago', content: 'Sharing my favorite morning pranayama routine. Start with 5 mins Anulom Vilom, then 3 mins Kapalabhati. Game changer for energy!', likes: 64, comments: 19, tag: 'Tips' },
+  { id: 1, user: 'Meera S.', avatar: 'https://ui-avatars.com/api/?name=Meera+S&background=84A98C&color=fff', time: '2h ago', content: 'Just completed my 30-day yoga challenge! The transformation has been incredible. My flexibility improved by so much 🙏', likes: 48, comments: 2, tag: 'Achievement' },
+  { id: 2, user: 'Amit K.', avatar: 'https://ui-avatars.com/api/?name=Amit+K&background=F4A261&color=fff', time: '5h ago', content: 'Looking for a meditation buddy! Anyone interested in joining a virtual sunrise meditation at 6 AM IST daily?', likes: 23, comments: 1, tag: 'Community' },
+  { id: 3, user: 'Priya R.', avatar: 'https://ui-avatars.com/api/?name=Priya+R&background=5B8FB9&color=fff', time: '1d ago', content: 'The Rishikesh retreat was life-changing. Sharing my notes and insights from the week-long Panchakarma + yoga retreat.', likes: 91, comments: 0, tag: 'Retreat' },
+  { id: 4, user: 'Ananya K.', avatar: 'https://ui-avatars.com/api/?name=Ananya+K&background=A98B84&color=fff', time: '2d ago', content: 'Sharing my favorite morning pranayama routine. Start with 5 mins Anulom Vilom, then 3 mins Kapalabhati. Game changer for energy!', likes: 64, comments: 0, tag: 'Tips' },
 ];
 
 const GROUPS = [
@@ -537,12 +537,26 @@ function SchedulePanel() {
 }
 
 function CommunityPanel() {
+  const { user } = useAuth();
   const [likedPosts, setLikedPosts] = useState<number[]>([]);
   const [joinedGroups, setJoinedGroups] = useState<string[]>(['Beginner Yogis', 'Morning Warriors']);
   const [showAddPostModal, setShowAddPostModal] = useState(false);
   const [newPostContent, setNewPostContent] = useState('');
   const [newPostTag, setNewPostTag] = useState('Tips');
   const [posts, setPosts] = useState(COMMUNITY_POSTS);
+  
+  // Comments mapping and active state
+  const [activeCommentText, setActiveCommentText] = useState('');
+  const [expandedPostComments, setExpandedPostComments] = useState<number | null>(null);
+  const [commentsMap, setCommentsMap] = useState<Record<number, { id: number; user: string; avatar: string; time: string; text: string }[]>>({
+    1: [
+      { id: 1, user: 'Amit K.', avatar: 'https://ui-avatars.com/api/?name=Amit+K&background=F4A261&color=fff', time: '1h ago', text: 'Incredible work Meera! Highly inspiring!' },
+      { id: 2, user: 'Priya R.', avatar: 'https://ui-avatars.com/api/?name=Priya+R&background=5B8FB9&color=fff', time: '45m ago', text: 'Wow, 30 days is no joke. I hope to reach that level soon!' }
+    ],
+    2: [
+      { id: 1, user: 'Meera S.', avatar: 'https://ui-avatars.com/api/?name=Meera+S&background=84A98C&color=fff', time: '3h ago', text: 'I am totally down for sunrise meditation! Adding you.' }
+    ]
+  });
 
   const toggleLike = (id: number) => {
     setLikedPosts((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
@@ -563,8 +577,8 @@ function CommunityPanel() {
 
     const newPost = {
       id: posts.length + 1,
-      user: 'You',
-      avatar: '[ui-avatars.com](https://ui-avatars.com/api/?name=You&background=84A98C&color=fff)',
+      user: user?.name || 'You',
+      avatar: user?.avatar || 'https://ui-avatars.com/api/?name=You&background=84A98C&color=fff',
       time: 'Just now',
       content: newPostContent,
       likes: 0,
@@ -577,6 +591,30 @@ function CommunityPanel() {
     setNewPostContent('');
     setNewPostTag('Tips');
     toast.success('Post published to community!');
+  };
+
+  const handleAddComment = (postId: number) => {
+    if (!activeCommentText.trim()) {
+      toast.error('Comment cannot be empty');
+      return;
+    }
+
+    const newComment = {
+      id: (commentsMap[postId] || []).length + 1,
+      user: user?.name || 'You',
+      avatar: user?.avatar || 'https://ui-avatars.com/api/?name=You&background=84A98C&color=fff',
+      time: 'Just now',
+      text: activeCommentText
+    };
+
+    setCommentsMap({
+      ...commentsMap,
+      [postId]: [...(commentsMap[postId] || []), newComment]
+    });
+
+    setPosts(posts.map(p => p.id === postId ? { ...p, comments: p.comments + 1 } : p));
+    setActiveCommentText('');
+    toast.success('Comment added successfully!');
   };
 
   return (
@@ -666,8 +704,10 @@ function CommunityPanel() {
                   <Heart size={14} fill={likedPosts.includes(post.id) ? 'currentColor' : 'none'} />
                   {post.likes + (likedPosts.includes(post.id) ? 1 : 0)}
                 </button>
-                <button onClick={() => toast.info('Comments section coming soon!')}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                <button onClick={() => setExpandedPostComments(expandedPostComments === post.id ? null : post.id)}
+                  className={`flex items-center gap-1.5 text-xs transition-colors ${expandedPostComments === post.id ? 'text-primary font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+                  style={expandedPostComments === post.id ? { color: 'hsl(133 18% 45%)' } : {}}
+                >
                   <MessageSquare size={14} /> {post.comments}
                 </button>
                 <button onClick={() => toast.success('Post shared!')}
@@ -675,6 +715,64 @@ function CommunityPanel() {
                   Share
                 </button>
               </div>
+
+              {/* Functional Comments Section */}
+              {expandedPostComments === post.id && (
+                <div className="mt-4 pt-4 border-t border-border space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                  {/* List of comments */}
+                  <div className="space-y-3 pl-2 md:pl-4">
+                    {(commentsMap[post.id] || []).length > 0 ? (
+                      (commentsMap[post.id] || []).map((comment) => (
+                        <div key={comment.id} className="flex gap-2.5 items-start bg-muted/30 p-2.5 rounded-xl border border-border/30">
+                          <img 
+                            src={comment.avatar} 
+                            alt={comment.user} 
+                            className="w-7 h-7 rounded-full object-cover" 
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-xs font-bold text-foreground">{comment.user}</span>
+                              <span className="text-[10px] text-muted-foreground">{comment.time}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{comment.text}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic pl-2">No comments yet. Be the first to share your thoughts!</p>
+                    )}
+                  </div>
+
+                  {/* Add comment input */}
+                  <div className="flex items-center gap-2 mt-2">
+                    <img 
+                      src={user?.avatar || 'https://ui-avatars.com/api/?name=You&background=84A98C&color=fff'} 
+                      alt={user?.name || 'You'} 
+                      className="w-7 h-7 rounded-full object-cover border" 
+                      style={{ borderColor: 'hsl(133 18% 59%)' }}
+                    />
+                    <input 
+                      type="text"
+                      placeholder="Write a reply..."
+                      className="flex-1 bg-muted/60 border border-border focus:border-primary focus:outline-none rounded-xl px-3 py-2 text-xs"
+                      value={activeCommentText}
+                      onChange={(e) => setActiveCommentText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleAddComment(post.id);
+                        }
+                      }}
+                    />
+                    <button 
+                      onClick={() => handleAddComment(post.id)}
+                      className="px-3 py-2 rounded-xl text-white font-bold text-xs shrink-0 transition-opacity hover:opacity-90"
+                      style={{ background: 'hsl(133 18% 59%)' }}
+                    >
+                      Post
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -907,6 +1005,14 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeNav, setActiveNav] = useState('dashboard');
+  
+  // Notification states
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([
+    { id: 1, title: 'Session Starting soon', desc: 'Your Yin Yoga session with Serene Kapoor starts in 15 minutes.', time: '15m ago', read: false },
+    { id: 2, title: 'Achievement Unlocked! 🏆', desc: 'Congratulations! You completed a 7-day yoga streak.', time: '2h ago', read: false },
+    { id: 3, title: 'Community Update', desc: 'Amit K. liked your comment in the Sunrise Meditation thread.', time: '1d ago', read: true }
+  ]);
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -1001,10 +1107,57 @@ const Dashboard = () => {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <button className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-muted transition-colors relative">
-              <Bell size={18} />
-              <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-muted transition-colors relative"
+              >
+                <Bell size={18} />
+                {notifications.some(n => !n.read) && (
+                  <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                )}
+              </button>
+              
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 rounded-2xl border border-border bg-card p-4 shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="flex items-center justify-between border-b border-border pb-2 mb-3">
+                    <h4 className="font-bold text-sm">Notifications</h4>
+                    <button 
+                      onClick={() => {
+                        setNotifications(notifications.map(n => ({ ...n, read: true })));
+                        toast.success('All marked as read');
+                      }}
+                      className="text-xs font-semibold hover:opacity-85"
+                      style={{ color: 'hsl(133 18% 45%)' }}
+                    >
+                      Mark all as read
+                    </button>
+                  </div>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {notifications.length > 0 ? (
+                      notifications.map((n) => (
+                        <div 
+                          key={n.id} 
+                          onClick={() => {
+                            setNotifications(notifications.map(item => item.id === n.id ? { ...item, read: true } : item));
+                          }}
+                          className={`p-2.5 rounded-xl text-left transition-colors cursor-pointer ${n.read ? 'bg-background hover:bg-muted/40 border border-transparent' : 'bg-primary/5 hover:bg-primary/10 border border-primary/20 border-l-2 border-l-primary'}`}
+                          style={!n.read ? { borderLeftColor: 'hsl(133 18% 59%)' } : {}}
+                        >
+                          <div className="flex justify-between items-start gap-2 mb-0.5">
+                            <h5 className="font-semibold text-xs text-foreground leading-tight">{n.title}</h5>
+                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">{n.time}</span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">{n.desc}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-muted-foreground text-center py-4">No new notifications</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
             <Link to="/profile">
               <img src={user.avatar} alt={user.name} className="w-9 h-9 rounded-full object-cover border-2"
                 style={{ borderColor: 'hsl(133 18% 59%)' }} />
