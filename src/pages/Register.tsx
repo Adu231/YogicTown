@@ -1,17 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Leaf, User, Mail, Lock, CheckCircle } from 'lucide-react';
 import { register } from '@/lib/auth';
 import { toast } from 'sonner';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { ThemeToggle } from '@/components/features/ThemeToggle';
+import { useAuth } from '@/hooks/useAuth';
 
 const GOALS = ['Stress Relief', 'Flexibility', 'Strength', 'Better Sleep', 'Weight Loss', 'Spiritual Growth', 'Meditation', 'Back Pain Relief'];
 
 const Register = () => {
   useScrollTop();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
+
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [goals, setGoals] = useState<string[]>([]);
   const [level, setLevel] = useState('');

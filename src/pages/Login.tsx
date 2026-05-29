@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Leaf, Mail, Lock, ChevronDown } from 'lucide-react';
 import { login, MOCK_USERS, getRoleDashboardPath } from '@/lib/auth';
 import { toast } from 'sonner';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { ThemeToggle } from '@/components/features/ThemeToggle';
+import { useAuth } from '@/hooks/useAuth';
 
 const DEMO_ACCOUNTS = [
   { email: 'priya@example.com', password: 'demo123', role: 'user', label: 'Wellness User', color: 'hsl(133 18% 59%)', bg: 'hsl(133 20% 92%)', emoji: '🧘' },
@@ -17,7 +18,14 @@ const DEMO_ACCOUNTS = [
 const Login = () => {
   useScrollTop();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
+
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState<string | null>(null);

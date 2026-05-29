@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Leaf } from 'lucide-react';
 import retreatImage from '@/assets/retreat-landscape.jpg';
+import { useAuth } from '@/hooks/useAuth';
 
 export function CTABannerSection() {
+  const { user } = useAuth();
   return (
     <section className="relative overflow-hidden py-24 px-4 md:px-8">
       {/* Background */}
@@ -36,7 +38,7 @@ export function CTABannerSection() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link to="/register"
+          <Link to={user ? "/dashboard" : "/register"}
             className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-base transition-all duration-200 hover:scale-105"
             style={{ background: 'hsl(27 87% 67%)', color: 'white', boxShadow: '0 8px 30px rgba(244,162,97,0.4)' }}>
             Start Your Free Journey <ArrowRight size={18} />

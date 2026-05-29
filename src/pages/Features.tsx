@@ -5,6 +5,7 @@ import { useScrollTop } from '@/hooks/useScrollTop';
 import { CTABannerSection } from '@/components/features/CTABannerSection';
 import { Link } from 'react-router-dom';
 import { Brain, Heart, Users, Video, Calendar, BarChart3, Leaf, Zap, Shield, Smartphone, ArrowRight } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const FEATURE_SECTIONS = [
   {
@@ -66,6 +67,7 @@ const TECHNICAL_FEATURES = [
 
 const FeaturesPage = () => {
   useScrollTop();
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,7 +84,7 @@ const FeaturesPage = () => {
             <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-8">
               A fully integrated wellness ecosystem — yoga, meditation, AI coaching, live classes, retreats, and community — all in one thoughtfully designed platform.
             </p>
-            <Link to="/register" className="btn-accent inline-flex">
+            <Link to={user ? "/dashboard" : "/register"} className="btn-accent inline-flex">
               Start Free Today <ArrowRight size={16} />
             </Link>
           </div>

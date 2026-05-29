@@ -1,6 +1,7 @@
 import meditationImage from '@/assets/meditation-group.jpg';
 import { CheckCircle, Leaf } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 
 const BENEFITS_LEFT = [
   'Reduce stress and anxiety by 60% within 8 weeks',
@@ -24,6 +25,7 @@ const STATS = [
 ];
 
 export function BenefitsSection() {
+  const { user } = useAuth();
   return (
     <section className="section-padding bg-background">
       <div className="max-w-7xl mx-auto">
@@ -96,7 +98,7 @@ export function BenefitsSection() {
               ))}
             </div>
 
-            <Link to="/register" className="btn-accent inline-flex">
+            <Link to={user ? "/dashboard" : "/register"} className="btn-accent inline-flex">
               Start Your Free Journey Today
             </Link>
           </div>

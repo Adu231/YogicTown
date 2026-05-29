@@ -2,8 +2,10 @@ import { Link } from 'react-router-dom';
 import { Play, Star, ArrowRight, Sparkles } from 'lucide-react';
 import heroImage from '@/assets/hero-yoga.jpg';
 import { AnimatedCounter } from './AnimatedCounter';
+import { useAuth } from '@/hooks/useAuth';
 
 export function HeroSection() {
+  const { user } = useAuth();
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
       {/* Background */}
@@ -42,7 +44,7 @@ export function HeroSection() {
 
           {/* CTA Buttons */}
           <div className="flex flex-wrap gap-4 mb-12">
-            <Link to="/register" className="btn-accent text-base px-8 py-3.5">
+            <Link to={user ? "/dashboard" : "/register"} className="btn-accent text-base px-8 py-3.5">
               Begin Your Journey <ArrowRight size={18} />
             </Link>
             <button className="inline-flex items-center gap-3 px-6 py-3.5 rounded-xl border border-border bg-background/70 backdrop-blur-sm hover:bg-background/90 transition-all duration-200 text-sm font-medium">
