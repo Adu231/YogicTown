@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Leaf, Home, BookOpen, Heart, Users, BarChart3, Settings, LogOut,
@@ -120,10 +120,32 @@ const NAV_ITEMS = [
 
 // ─── Sub-panels ───────────────────────────────────────────────────────────────
 
+const NEW_AVAILABLE_PROGRAMS = [
+  { id: 101, title: '14-Day Vinyasa Stretch', instructor: 'Rohan Das', progress: 0, lessons: 14, completed: 0, level: 'Intermediate', tag: 'Not Started', color: 'hsl(133 18% 59%)', category: 'yoga', description: 'A wonderful 14-day flow to improve flexibility and elongate muscle groups.' },
+  { id: 102, title: 'Spiritual Awakening & Kundalini', instructor: 'Yogi Arun', progress: 0, lessons: 21, completed: 0, level: 'Advanced', tag: 'Not Started', color: 'hsl(280 50% 60%)', category: 'yoga', description: 'Awaken the Kundalini energy at the base of the spine with sacred practices.' },
+  { id: 103, title: 'Stress Dissolver Meditation', instructor: 'Serene Kapoor', progress: 0, lessons: 10, completed: 0, level: 'Beginner', tag: 'Not Started', color: 'hsl(220 70% 60%)', category: 'meditation', description: 'Scientific breathing and mindfulness techniques to dissolve daily work stress.' },
+  { id: 104, title: 'Chakra Balancing Series', instructor: 'Swami Satchidananda', progress: 0, lessons: 7, completed: 0, level: 'All Levels', tag: 'Not Started', color: 'hsl(27 87% 67%)', category: 'meditation', description: 'Seven sessions dedicated to tuning and aligning your primary energy centers.' },
+  { id: 105, title: 'Sound Bath & Yoga Nidra', instructor: 'Nisha Mehta', progress: 0, lessons: 8, completed: 0, level: 'Beginner', tag: 'Not Started', color: 'hsl(200 60% 55%)', category: 'sleep', description: 'Immersive sound vibrations combined with deep rest techniques for sleep recovery.' },
+  { id: 106, title: 'Ayurvedic Cooking & Nutrition', instructor: 'Dr. Priya Nair', progress: 0, lessons: 15, completed: 0, level: 'All Levels', tag: 'Not Started', color: 'hsl(160 40% 50%)', category: 'wellness', description: 'Learn how to cook food that balances your specific doshas for daily health.' },
+];
+
 function ProgramsPanel() {
   const [filter, setFilter] = useState('all');
+  const [enrolledPrograms, setEnrolledPrograms] = useState(() => {
+    const stored = localStorage.getItem('enrolled_programs');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return PROGRAMS; }
+    }
+    return PROGRAMS;
+  });
+  const [isBrowseOpen, setIsBrowseOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('enrolled_programs', JSON.stringify(enrolledPrograms));
+  }, [enrolledPrograms]);
+
   const filters = ['all', 'yoga', 'meditation', 'breathing', 'wellness', 'sleep'];
-  const filtered = filter === 'all' ? PROGRAMS : PROGRAMS.filter((p) => p.category === filter);
+  const filtered = filter === 'all' ? enrolledPrograms : enrolledPrograms.filter((p: any) => p.category === filter);
 
   return (
     <div className="space-y-6">
@@ -132,7 +154,7 @@ function ProgramsPanel() {
           <h2 className="text-xl font-bold">My Programs</h2>
           <p className="text-sm text-muted-foreground">Track your enrolled courses and learning progress</p>
         </div>
-        <button onClick={() => toast.success('Explore new programs coming soon!')}
+        <button onClick={() => setIsBrowseOpen(true)}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
           style={{ background: 'hsl(133 18% 59%)' }}>
           <Plus size={15} /> Browse More
@@ -151,7 +173,7 @@ function ProgramsPanel() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {filtered.map((program) => (
+        {filtered.map((program: any) => (
           <div key={program.id} className="card-wellness group hover:shadow-lg transition-all duration-300">
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1 min-w-0 pr-2">
@@ -185,7 +207,24 @@ function ProgramsPanel() {
             </div>
 
             <button
-              onClick={() => toast.success(`Resuming: ${program.title}`)}
+              onClick={() => {
+                if (program.tag === 'Completed') {
+                  toast.success(`Reviewing: ${program.title} 🙏`);
+                } else {
+                  const newCompleted = Math.min(program.completed + 1, program.lessons);
+                  const newProgress = Math.round((newCompleted / program.lessons) * 100);
+                  const newTag = newProgress === 100 ? 'Completed' : 'In Progress';
+                  
+                  setEnrolledPrograms((prev: any) => prev.map((p: any) => p.id === program.id ? {
+                    ...p,
+                    progress: newProgress,
+                    completed: newCompleted,
+                    tag: newTag
+                  } : p));
+                  
+                  toast.success(newProgress === 100 ? `Congratulations! Completed "${program.title}"! 🎓` : `Progress saved: Lesson ${newCompleted} completed on "${program.title}"`);
+                }
+              }}
               className="w-full py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-2"
               style={program.tag === 'Completed'
                 ? { background: 'hsl(133 20% 92%)', color: 'hsl(133 20% 40%)' }
@@ -197,6 +236,54 @@ function ProgramsPanel() {
           </div>
         ))}
       </div>
+
+      {/* Browse More Modal */}
+      {isBrowseOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="relative w-full max-w-3xl max-h-[85vh] overflow-y-auto bg-card border rounded-3xl p-6 shadow-2xl animate-in fade-in duration-200">
+            <button 
+              onClick={() => setIsBrowseOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-xl bg-muted hover:bg-muted/80 transition-colors"
+            >
+              <X size={18} />
+            </button>
+            <h3 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Playfair Display, serif' }}>Browse Programs</h3>
+            <p className="text-sm text-muted-foreground mb-6">Discover and enroll in premium wellness courses designed for your goals.</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {NEW_AVAILABLE_PROGRAMS.map((program) => {
+                const isEnrolled = enrolledPrograms.some((p: any) => p.id === program.id);
+                return (
+                  <div key={program.id} className="p-5 rounded-2xl border bg-background flex flex-col justify-between h-full">
+                    <div>
+                      <div className="flex items-start justify-between mb-2">
+                        <span className="text-xs px-2.5 py-0.5 rounded-full font-medium" style={{ background: 'hsl(133 20% 92%)', color: 'hsl(133 20% 35%)' }}>
+                          {program.level}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{program.lessons} lessons</span>
+                      </div>
+                      <h4 className="font-bold text-base mb-1">{program.title}</h4>
+                      <p className="text-xs text-muted-foreground mb-2">by {program.instructor}</p>
+                      <p className="text-xs text-muted-foreground mb-4 leading-relaxed">{program.description}</p>
+                    </div>
+                    <button
+                      disabled={isEnrolled}
+                      onClick={() => {
+                        setEnrolledPrograms((prev: any) => [...prev, program]);
+                        toast.success(`Successfully enrolled in "${program.title}"! 🎉`);
+                      }}
+                      className="w-full py-2 rounded-xl text-xs font-semibold text-white transition-all disabled:opacity-60 flex items-center justify-center gap-1.5"
+                      style={{ background: isEnrolled ? 'hsl(133 20% 40%)' : 'hsl(133 18% 59%)' }}
+                    >
+                      {isEnrolled ? <><CheckCircle size={13} /> Enrolled</> : <><Plus size={13} /> Enroll Now</>}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -302,7 +389,13 @@ function MeditationPanel() {
   );
 }
 
-function SchedulePanel() {
+function SchedulePanel({
+  joinedClasses,
+  onToggleJoin
+}: {
+  joinedClasses: string[];
+  onToggleJoin: (title: string) => void;
+}) {
   const [selectedDay, setSelectedDay] = useState('Thu');
   const [showAddClassModal, setShowAddClassModal] = useState(false);
   const [newClassTitle, setNewClassTitle] = useState('');
@@ -310,6 +403,19 @@ function SchedulePanel() {
   const [newClassDuration, setNewClassDuration] = useState('30 min');
   const [newClassInstructor, setNewClassInstructor] = useState('');
   
+  // Local state for schedule events to make dynamic updates reactive & persisted
+  const [scheduleEvents, setScheduleEvents] = useState(() => {
+    const stored = localStorage.getItem('schedule_events');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return SCHEDULE_EVENTS; }
+    }
+    return SCHEDULE_EVENTS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('schedule_events', JSON.stringify(scheduleEvents));
+  }, [scheduleEvents]);
+
   const today = new Date();
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const todayName = dayNames[today.getDay()];
@@ -329,7 +435,10 @@ function SchedulePanel() {
     };
 
     // Add to schedule
-    SCHEDULE_EVENTS[selectedDay] = [...(SCHEDULE_EVENTS[selectedDay] || []), newClass];
+    setScheduleEvents((prev: any) => ({
+      ...prev,
+      [selectedDay]: [...(prev[selectedDay] || []), newClass]
+    }));
     
     setShowAddClassModal(false);
     setNewClassTitle('');
@@ -448,7 +557,7 @@ function SchedulePanel() {
           {SCHEDULE_DAYS.map((day, i) => {
             const isToday = day === todayName;
             const isSelected = day === selectedDay;
-            const hasEvents = SCHEDULE_EVENTS[day]?.length > 0;
+            const hasEvents = scheduleEvents[day]?.length > 0;
             return (
               <button key={day} onClick={() => setSelectedDay(day)}
                 className={`flex flex-col items-center py-2.5 px-1 rounded-xl transition-all ${isSelected ? 'text-white' : 'hover:bg-muted'}`}
@@ -473,22 +582,28 @@ function SchedulePanel() {
             <Calendar size={14} style={{ color: 'hsl(133 18% 59%)' }} />
             {selectedDay === todayName ? "Today's" : selectedDay + "'s"} Classes
           </h4>
-          {SCHEDULE_EVENTS[selectedDay]?.length > 0 ? (
+          {scheduleEvents[selectedDay]?.length > 0 ? (
             <div className="space-y-2">
-              {SCHEDULE_EVENTS[selectedDay].map((event, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 group hover:bg-muted transition-colors">
-                  <div className="w-1 h-10 rounded-full shrink-0" style={{ background: event.color }} />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium">{event.title}</div>
-                    <div className="text-xs text-muted-foreground">{event.time} · {event.duration} · {event.instructor}</div>
+              {scheduleEvents[selectedDay].map((event: any, i: number) => {
+                const isJoined = joinedClasses.includes(event.title);
+                return (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 group hover:bg-muted transition-colors">
+                    <div className="w-1 h-10 rounded-full shrink-0" style={{ background: event.color }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium">{event.title}</div>
+                      <div className="text-xs text-muted-foreground">{event.time} · {event.duration} · {event.instructor}</div>
+                    </div>
+                    <button
+                      onClick={() => onToggleJoin(event.title)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold shrink-0 transition-all"
+                      style={isJoined
+                        ? { background: 'hsl(133 20% 92%)', color: 'hsl(133 20% 40%)' }
+                        : { background: event.color, color: 'white' }}>
+                      {isJoined ? 'Joined ✓' : <><Play size={10} fill="currentColor" /> Join</>}
+                    </button>
                   </div>
-                  <button onClick={() => toast.success(`Joining: ${event.title}`)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-white shrink-0"
-                    style={{ background: event.color }}>
-                    <Play size={10} fill="currentColor" /> Join
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8">
@@ -507,29 +622,35 @@ function SchedulePanel() {
       <div className="card-wellness">
         <h3 className="font-semibold mb-4">Upcoming Live Classes</h3>
         <div className="space-y-3">
-          {upcomingClasses.map((cls) => (
-            <div key={cls.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted transition-colors group">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'hsl(133 20% 92%)' }}>
-                <BookOpen size={16} style={{ color: 'hsl(133 18% 59%)' }} />
+          {upcomingClasses.map((cls) => {
+            const isJoined = joinedClasses.includes(cls.title);
+            return (
+              <div key={cls.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted transition-colors group">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: 'hsl(133 20% 92%)' }}>
+                  <BookOpen size={16} style={{ color: 'hsl(133 18% 59%)' }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">{cls.title}</div>
+                  <div className="text-xs text-muted-foreground">{cls.instructor} · {cls.time} · {cls.duration}</div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  {cls.isLive && (
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: 'hsl(0 70% 95%)', color: 'hsl(0 70% 55%)' }}>
+                      ● Live
+                    </span>
+                  )}
+                  <button
+                    onClick={() => onToggleJoin(cls.title)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                    style={isJoined
+                      ? { background: 'hsl(133 20% 92%)', color: 'hsl(133 20% 40%)' }
+                      : { background: 'hsl(133 18% 59%)', color: 'white' }}>
+                    {isJoined ? 'Joined ✓' : 'Join'}
+                  </button>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium truncate">{cls.title}</div>
-                <div className="text-xs text-muted-foreground">{cls.instructor} · {cls.time} · {cls.duration}</div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {cls.isLive && (
-                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: 'hsl(0 70% 95%)', color: 'hsl(0 70% 55%)' }}>
-                    ● Live
-                  </span>
-                )}
-                <button onClick={() => toast.success(`Joining: ${cls.title}`)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white"
-                  style={{ background: 'hsl(133 18% 59%)' }}>
-                  Join
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
@@ -538,25 +659,84 @@ function SchedulePanel() {
 
 function CommunityPanel() {
   const { user } = useAuth();
-  const [likedPosts, setLikedPosts] = useState<number[]>([]);
-  const [joinedGroups, setJoinedGroups] = useState<string[]>(['Beginner Yogis', 'Morning Warriors']);
+  
+  const [likedPosts, setLikedPosts] = useState<number[]>(() => {
+    const stored = localStorage.getItem('community_liked_posts');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return []; }
+    }
+    return [];
+  });
+
+  const [challengeDay, setChallengeDay] = useState<number>(() => {
+    const stored = localStorage.getItem('community_challenge_day');
+    if (stored) {
+      const parsed = parseInt(stored, 10);
+      if (!isNaN(parsed)) return parsed;
+    }
+    return 14;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('community_challenge_day', challengeDay.toString());
+  }, [challengeDay]);
+
+  const [joinedGroups, setJoinedGroups] = useState<string[]>(() => {
+    const stored = localStorage.getItem('community_joined_groups');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return ['Beginner Yogis', 'Morning Warriors']; }
+    }
+    return ['Beginner Yogis', 'Morning Warriors'];
+  });
+
+  const [posts, setPosts] = useState(() => {
+    const stored = localStorage.getItem('community_posts');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return COMMUNITY_POSTS; }
+    }
+    return COMMUNITY_POSTS;
+  });
+
+  const [commentsMap, setCommentsMap] = useState<Record<number, { id: number; user: string; avatar: string; time: string; text: string }[]>>(() => {
+    const stored = localStorage.getItem('community_comments_map');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { }
+    }
+    return {
+      1: [
+        { id: 1, user: 'Amit K.', avatar: 'https://ui-avatars.com/api/?name=Amit+K&background=F4A261&color=fff', time: '1h ago', text: 'Incredible work Meera! Highly inspiring!' },
+        { id: 2, user: 'Priya R.', avatar: 'https://ui-avatars.com/api/?name=Priya+R&background=5B8FB9&color=fff', time: '45m ago', text: 'Wow, 30 days is no joke. I hope to reach that level soon!' }
+      ],
+      2: [
+        { id: 1, user: 'Meera S.', avatar: 'https://ui-avatars.com/api/?name=Meera+S&background=84A98C&color=fff', time: '3h ago', text: 'I am totally down for sunrise meditation! Adding you.' }
+      ]
+    };
+  });
+
   const [showAddPostModal, setShowAddPostModal] = useState(false);
   const [newPostContent, setNewPostContent] = useState('');
   const [newPostTag, setNewPostTag] = useState('Tips');
-  const [posts, setPosts] = useState(COMMUNITY_POSTS);
   
   // Comments mapping and active state
   const [activeCommentText, setActiveCommentText] = useState('');
   const [expandedPostComments, setExpandedPostComments] = useState<number | null>(null);
-  const [commentsMap, setCommentsMap] = useState<Record<number, { id: number; user: string; avatar: string; time: string; text: string }[]>>({
-    1: [
-      { id: 1, user: 'Amit K.', avatar: 'https://ui-avatars.com/api/?name=Amit+K&background=F4A261&color=fff', time: '1h ago', text: 'Incredible work Meera! Highly inspiring!' },
-      { id: 2, user: 'Priya R.', avatar: 'https://ui-avatars.com/api/?name=Priya+R&background=5B8FB9&color=fff', time: '45m ago', text: 'Wow, 30 days is no joke. I hope to reach that level soon!' }
-    ],
-    2: [
-      { id: 1, user: 'Meera S.', avatar: 'https://ui-avatars.com/api/?name=Meera+S&background=84A98C&color=fff', time: '3h ago', text: 'I am totally down for sunrise meditation! Adding you.' }
-    ]
-  });
+
+  // Sync to localStorage
+  useEffect(() => {
+    localStorage.setItem('community_liked_posts', JSON.stringify(likedPosts));
+  }, [likedPosts]);
+
+  useEffect(() => {
+    localStorage.setItem('community_joined_groups', JSON.stringify(joinedGroups));
+  }, [joinedGroups]);
+
+  useEffect(() => {
+    localStorage.setItem('community_posts', JSON.stringify(posts));
+  }, [posts]);
+
+  useEffect(() => {
+    localStorage.setItem('community_comments_map', JSON.stringify(commentsMap));
+  }, [commentsMap]);
 
   const toggleLike = (id: number) => {
     setLikedPosts((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
@@ -813,15 +993,41 @@ function CommunityPanel() {
               <span className="font-semibold text-sm">Active Challenge</span>
             </div>
             <h4 className="font-bold mb-1">21-Day Mindfulness</h4>
-            <p className="text-xs text-white/75 mb-3">Day 14 of 21 — Keep going!</p>
+            <p className="text-xs text-white/75 mb-3">
+              {challengeDay === 21 
+                ? 'Day 21 of 21 — Completed! 🏆' 
+                : `Day ${challengeDay} of 21 — Keep going!`}
+            </p>
             <div className="h-2 rounded-full bg-white/20 overflow-hidden mb-3">
-              <div className="h-full rounded-full bg-white" style={{ width: '67%' }} />
+              <div className="h-full rounded-full bg-white transition-all duration-500" 
+                style={{ width: `${Math.round((challengeDay / 21) * 100)}%` }} />
             </div>
-            <button onClick={() => toast.success('Challenge progress updated!')}
-              className="w-full py-2 rounded-xl text-xs font-semibold hover:bg-white/20 transition-all"
-              style={{ border: '1px solid rgba(255,255,255,0.4)' }}>
-              Log Today's Practice
-            </button>
+            {challengeDay === 21 ? (
+              <button 
+                onClick={() => {
+                  setChallengeDay(0);
+                  toast.success('Challenge reset! Ready to start again 🙏');
+                }}
+                className="w-full py-2 rounded-xl text-xs font-semibold hover:bg-white/20 transition-all bg-white/10"
+                style={{ border: '1px solid rgba(255,255,255,0.4)' }}>
+                Reset Challenge
+              </button>
+            ) : (
+              <button 
+                onClick={() => {
+                  const nextDay = Math.min(challengeDay + 1, 21);
+                  setChallengeDay(nextDay);
+                  if (nextDay === 21) {
+                    toast.success('Congratulations! Challenge completed! 🏆🎓');
+                  } else {
+                    toast.success(`Progress saved! Day ${nextDay} logged. Keep it up! 🌟`);
+                  }
+                }}
+                className="w-full py-2 rounded-xl text-xs font-semibold hover:bg-white/20 transition-all"
+                style={{ border: '1px solid rgba(255,255,255,0.4)' }}>
+                Log Today's Practice
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -1006,13 +1212,49 @@ const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeNav, setActiveNav] = useState('dashboard');
   
+  // Centralized Joined classes tracking
+  const [joinedClasses, setJoinedClasses] = useState<string[]>(() => {
+    const stored = localStorage.getItem('joined_classes');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return []; }
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('joined_classes', JSON.stringify(joinedClasses));
+  }, [joinedClasses]);
+
+  const handleToggleJoinClass = (title: string) => {
+    setJoinedClasses((prev) => {
+      const isAlreadyJoined = prev.includes(title);
+      if (isAlreadyJoined) {
+        toast.info(`Left class: ${title}`);
+        return prev.filter((x) => x !== title);
+      } else {
+        toast.success(`Joined class: ${title}! 🙏`);
+        return [...prev, title];
+      }
+    });
+  };
+
   // Notification states
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: 'Session Starting soon', desc: 'Your Yin Yoga session with Serene Kapoor starts in 15 minutes.', time: '15m ago', read: false },
-    { id: 2, title: 'Achievement Unlocked! 🏆', desc: 'Congratulations! You completed a 7-day yoga streak.', time: '2h ago', read: false },
-    { id: 3, title: 'Community Update', desc: 'Amit K. liked your comment in the Sunrise Meditation thread.', time: '1d ago', read: true }
-  ]);
+  const [notifications, setNotifications] = useState(() => {
+    const stored = localStorage.getItem('dashboard_notifications');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { }
+    }
+    return [
+      { id: 1, title: 'Session Starting soon', desc: 'Your Yin Yoga session with Serene Kapoor starts in 15 minutes.', time: '15m ago', read: false },
+      { id: 2, title: 'Achievement Unlocked! 🏆', desc: 'Congratulations! You completed a 7-day yoga streak.', time: '2h ago', read: false },
+      { id: 3, title: 'Community Update', desc: 'Amit K. liked your comment in the Sunrise Meditation thread.', time: '1d ago', read: true }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('dashboard_notifications', JSON.stringify(notifications));
+  }, [notifications]);
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -1234,26 +1476,33 @@ const Dashboard = () => {
                       onClick={() => setActiveNav('schedule')}>View all</button>
                   </div>
                   <div className="space-y-3">
-                    {upcomingClasses.map((cls) => (
-                      <div key={cls.id} className="p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <div className="text-sm font-medium leading-tight">{cls.title}</div>
-                          {cls.isLive && (
-                            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium shrink-0" style={{ background: 'hsl(0 70% 95%)', color: 'hsl(0 70% 55%)' }}>
-                              <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> Live
-                            </span>
-                          )}
+                    {upcomingClasses.map((cls) => {
+                      const isJoined = joinedClasses.includes(cls.title);
+                      return (
+                        <div key={cls.id} className="p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <div className="text-sm font-medium leading-tight">{cls.title}</div>
+                            {cls.isLive && (
+                              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium shrink-0" style={{ background: 'hsl(0 70% 95%)', color: 'hsl(0 70% 55%)' }}>
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> Live
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground">{cls.instructor}</div>
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="text-xs text-muted-foreground">{cls.time}</span>
+                            <button
+                              className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg transition-all"
+                              style={isJoined
+                                ? { background: 'hsl(133 20% 92%)', color: 'hsl(133 20% 40%)' }
+                                : { color: 'hsl(133 18% 59%)' }}
+                              onClick={() => handleToggleJoinClass(cls.title)}>
+                              {isJoined ? 'Joined ✓' : <><Play size={11} fill="currentColor" /> Join</>}
+                            </button>
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">{cls.instructor}</div>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-muted-foreground">{cls.time}</span>
-                          <button className="flex items-center gap-1 text-xs font-medium" style={{ color: 'hsl(133 18% 59%)' }}
-                            onClick={() => toast.success(`Joining: ${cls.title}`)}>
-                            <Play size={11} fill="currentColor" /> Join
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -1334,7 +1583,12 @@ const Dashboard = () => {
           {activeNav === 'meditation' && <MeditationPanel />}
 
           {/* ── Schedule ── */}
-          {activeNav === 'schedule' && <SchedulePanel />}
+          {activeNav === 'schedule' && (
+            <SchedulePanel
+              joinedClasses={joinedClasses}
+              onToggleJoin={handleToggleJoinClass}
+            />
+          )}
 
           {/* ── Community ── */}
           {activeNav === 'community' && <CommunityPanel />}
