@@ -4,8 +4,9 @@ import dashboardImg from '@/assets/dashboard-preview.jpg';
 
 export function DashboardPreviewSection() {
   return (
-    <section className="section-padding overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(133 20% 96%) 0%, hsl(60 17% 98%) 100%)' }}>
-      <div className="max-w-7xl mx-auto">
+    <section className="section-padding overflow-hidden relative bg-background">
+      <div className="absolute inset-0 dark:hidden" style={{ background: 'linear-gradient(135deg, hsl(133 20% 96%) 0%, hsl(60 17% 98%) 100%)' }} />
+      <div className="max-w-7xl mx-auto relative z-10">
         {/* Header */}
         <div className="text-center mb-14">
           <div className="tag-orange mx-auto mb-4 w-fit">

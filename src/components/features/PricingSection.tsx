@@ -11,8 +11,10 @@ export function PricingSection() {
   const [isYearly, setIsYearly] = useState(false);
 
   return (
-    <section className="section-padding border-y border-border/30" style={{ background: isDark ? 'hsl(150 15% 12%)' : 'hsl(60 17% 98%)' }}>
-      <div className="max-w-7xl mx-auto">
+    <section className="section-padding border-y border-border/30 relative overflow-hidden bg-background">
+      <div className="absolute inset-0 dark:hidden" style={{ background: 'hsl(60 17% 98%)' }} />
+      <div className="absolute inset-0 hidden dark:block" style={{ background: 'hsl(150 15% 12%)' }} />
+      <div className="max-w-7xl mx-auto relative z-10">
         {/* Header */}
         <div className="text-center mb-12">
           <div className="tag-pill mx-auto mb-4 w-fit">

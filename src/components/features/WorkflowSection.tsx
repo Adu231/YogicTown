@@ -40,8 +40,8 @@ const STEPS = [
 
 export function WorkflowSection() {
   return (
-    <section className="section-padding" style={{ background: 'hsl(133 20% 96%)' }}>
-      <div className="dark:hidden absolute inset-0" style={{ background: 'hsl(133 20% 96%)' }} />
+    <section className="section-padding relative bg-background overflow-hidden">
+      <div className="absolute inset-0 dark:hidden" style={{ background: 'hsl(133 20% 96%)' }} />
       <div className="max-w-7xl mx-auto relative">
         {/* Header */}
         <div className="text-center mb-16">
