@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Leaf, ChevronDown, User, Settings, LogOut, LayoutDashboard } from 'lucide-react';
 import { ThemeToggle } from '@/components/features/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
+import { getRoleDashboardPath } from '@/lib/auth';
 
 const NAV_LINKS = [
   { label: 'Features', href: '/features' },
@@ -89,7 +90,7 @@ export function Navbar() {
               </button>
               {userMenuOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-xl py-1 z-50">
-                  <Link to="/dashboard" className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors" onClick={() => setUserMenuOpen(false)}>
+                  <Link to={getRoleDashboardPath(user.role)} className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors" onClick={() => setUserMenuOpen(false)}>
                     <LayoutDashboard size={15} /> Dashboard
                   </Link>
                   <Link to="/profile" className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors" onClick={() => setUserMenuOpen(false)}>
@@ -148,7 +149,7 @@ export function Navbar() {
             <hr className="my-2 border-border" />
             {user ? (
               <>
-                <Link to="/dashboard" className="px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2">
+                <Link to={getRoleDashboardPath(user.role)} className="px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2">
                   <LayoutDashboard size={15} /> Dashboard
                 </Link>
                 <Link to="/profile" className="px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2">

@@ -1261,16 +1261,25 @@ const Dashboard = () => {
     return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
   })();
 
-  if (!user) {
-    navigate('/login', { replace: true });
+  useEffect(() => {
+    if (!user) {
+      navigate('/login', { replace: true });
+      return;
+    }
+    if (user.role === 'instructor') {
+      navigate('/instructor-dashboard', { replace: true });
+    } else if (user.role === 'organizer') {
+      navigate('/organizer-dashboard', { replace: true });
+    } else if (user.role === 'coach') {
+      navigate('/coach-dashboard', { replace: true });
+    } else if (user.role === 'admin') {
+      navigate('/admin-dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
+  if (!user || user.role !== 'user') {
     return null;
   }
-
-  // Role-based redirect for non-user roles
-  if (user.role === 'instructor') { navigate('/instructor-dashboard', { replace: true }); return null; }
-  if (user.role === 'organizer') { navigate('/organizer-dashboard', { replace: true }); return null; }
-  if (user.role === 'coach') { navigate('/coach-dashboard', { replace: true }); return null; }
-  if (user.role === 'admin') { navigate('/admin-dashboard', { replace: true }); return null; }
 
   const handleLogout = () => {
     logout();

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Camera, Check, Leaf, MapPin, Mail, Phone, Star, Award, Edit3 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
-import { updateProfile } from '@/lib/auth';
+import { updateProfile, getRoleDashboardPath } from '@/lib/auth';
 import { toast } from 'sonner';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
@@ -63,7 +63,7 @@ const Profile = () => {
       <main className="pt-16">
         <div className="max-w-5xl mx-auto px-4 md:px-8 py-10">
           {/* Back */}
-          <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
+          <Link to={getRoleDashboardPath(user.role)} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
             <ArrowLeft size={16} /> Back to Dashboard
           </Link>
 

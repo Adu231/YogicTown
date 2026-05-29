@@ -8,6 +8,7 @@ import { useScrollTop } from '@/hooks/useScrollTop';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { toast } from 'sonner';
+import { getRoleDashboardPath } from '@/lib/auth';
 
 const TABS = [
   { id: 'account', label: 'Account', icon: User },
@@ -70,7 +71,7 @@ const Settings = () => {
       <Navbar />
       <main className="pt-16">
         <div className="max-w-5xl mx-auto px-4 md:px-8 py-10">
-          <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
+          <Link to={getRoleDashboardPath(user.role)} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
             <ArrowLeft size={16} /> Back to Dashboard
           </Link>
           <h1 className="text-3xl font-bold mb-8" style={{ fontFamily: 'Playfair Display, serif' }}>Settings</h1>

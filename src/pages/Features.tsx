@@ -7,6 +7,7 @@ import { CTABannerSection } from '@/components/features/CTABannerSection';
 import { Link } from 'react-router-dom';
 import { Brain, Heart, Users, Video, Calendar, BarChart3, Leaf, Zap, Shield, Smartphone, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
 
 const FEATURE_SECTIONS = [
   {
@@ -76,12 +77,17 @@ const FeaturesPage = () => {
       <Navbar />
       <main className="pt-16">
         {/* Hero */}
-        <section className="section-padding" style={{ background: isDark ? 'linear-gradient(135deg, hsl(150 15% 12%) 0%, hsl(150 15% 8%) 100%)' : 'linear-gradient(135deg, hsl(133 20% 96%) 0%, hsl(60 17% 98%) 100%)' }}>
+        <section className={cn(
+          "section-padding",
+          isDark 
+            ? "bg-gradient-to-br from-[hsl(150_15%_12%)] to-[hsl(150_15%_8%)]"
+            : "bg-gradient-to-br from-[hsl(133_20%_96%)] to-[hsl(60_17%_98%)]"
+        )}>
           <div className="max-w-4xl mx-auto text-center">
             <div className="tag-pill mx-auto mb-5 w-fit"><Leaf size={12} /> Platform Features</div>
             <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
               Everything You Need for<br />
-              <span className="italic" style={{ color: 'hsl(27 87% 60%)' }}>Complete Wellness</span>
+              <span className="italic text-[hsl(27_87%_60%)]">Complete Wellness</span>
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-8">
               A fully integrated wellness ecosystem — yoga, meditation, AI coaching, live classes, retreats, and community — all in one thoughtfully designed platform.
@@ -97,25 +103,43 @@ const FeaturesPage = () => {
           {FEATURE_SECTIONS.map((feature, i) => {
             const Icon = feature.icon;
             return (
-              <div key={i} className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-center ${i % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}>
+              <div key={i} className={cn(
+                "grid grid-cols-1 lg:grid-cols-2 gap-12 items-center",
+                i % 2 === 1 && "lg:flex-row-reverse"
+              )}>
                 <div className={i % 2 === 1 ? 'lg:order-2' : ''}>
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5" style={{ background: feature.bg }}>
+                  <div 
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5"
+                    style={{ background: feature.bg }}
+                  >
                     <Icon size={22} style={{ color: feature.color }} />
                   </div>
-                  <div className="text-xs font-medium mb-2 uppercase tracking-wider text-muted-foreground">{feature.tagline}</div>
+                  <div className="text-xs font-medium mb-2 uppercase tracking-wider text-muted-foreground">
+                    {feature.tagline}
+                  </div>
                   <h2 className="text-3xl font-bold mb-4">{feature.title}</h2>
                   <p className="text-muted-foreground leading-relaxed mb-6">{feature.description}</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
                     {feature.features.map((f, j) => (
                       <div key={j} className="flex items-center gap-2 text-sm">
-                        <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: feature.color }} />
+                        <div 
+                          className="w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{ background: feature.color }}
+                        />
                         {f}
                       </div>
                     ))}
                   </div>
                 </div>
-                <div className={`rounded-3xl overflow-hidden aspect-[16/10] ${i % 2 === 1 ? 'lg:order-1' : ''}`}>
-                  <img src={feature.image} alt={feature.title} className="w-full h-full object-cover" />
+                <div className={cn(
+                  "rounded-3xl overflow-hidden aspect-[16/10]",
+                  i % 2 === 1 && "lg:order-1"
+                )}>
+                  <img 
+                    src={feature.image} 
+                    alt={feature.title} 
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               </div>
             );
@@ -123,7 +147,12 @@ const FeaturesPage = () => {
         </section>
 
         {/* Technical Features */}
-        <section className="section-padding" style={{ background: isDark ? 'hsl(150 15% 12%)' : 'hsl(133 20% 96%)' }}>
+        <section className={cn(
+          "section-padding",
+          isDark 
+            ? "bg-[hsl(150_15%_12%)]"
+            : "bg-[hsl(133_20%_96%)]"
+        )}>
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-3">Built for Real Life</h2>
@@ -134,8 +163,8 @@ const FeaturesPage = () => {
                 const Icon = f.icon;
                 return (
                   <div key={i} className="card-wellness text-center">
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: 'hsl(133 20% 92%)' }}>
-                      <Icon size={20} style={{ color: 'hsl(133 18% 59%)' }} />
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 bg-[hsl(133_20%_92%)]">
+                      <Icon size={20} className="text-[hsl(133_18%_59%)]" />
                     </div>
                     <h3 className="font-semibold mb-2">{f.title}</h3>
                     <p className="text-sm text-muted-foreground">{f.desc}</p>

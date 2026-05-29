@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Leaf, Home, Users, BookOpen, Calendar, BarChart3, Settings, LogOut,
@@ -79,26 +79,115 @@ const CoachDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeNav, setActiveNav] = useState('overview');
 
-  // Data state
-  const [clients, setClients] = useState(INITIAL_CLIENTS);
-  const [programs, setPrograms] = useState(INITIAL_PROGRAMS);
-  const [consultations, setConsultations] = useState(INITIAL_CONSULTATIONS);
+  // Data states with localStorage persistence
+  const [clients, setClients] = useState(() => {
+    const stored = localStorage.getItem('coach_clients');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return INITIAL_CLIENTS; }
+    }
+    return INITIAL_CLIENTS;
+  });
 
-  // Modal states
+  const [programs, setPrograms] = useState(() => {
+    const stored = localStorage.getItem('coach_programs');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return INITIAL_PROGRAMS; }
+    }
+    return INITIAL_PROGRAMS;
+  });
+
+  const [consultations, setConsultations] = useState(() => {
+    const stored = localStorage.getItem('coach_consultations');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return INITIAL_CONSULTATIONS; }
+    }
+    return INITIAL_CONSULTATIONS;
+  });
+
+  const [notifications, setNotifications] = useState(() => {
+    const stored = localStorage.getItem('coach_notifications');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return []; }
+    }
+    return [
+      { id: 1, title: 'New Client Assigned 👤', desc: 'Anjali Patel has subscribed to Elite Plan and assigned to you.', time: '2 hours ago', read: false },
+      { id: 2, title: 'Session Rescheduled 📅', desc: 'Rahul Verma requested to change his Consultation to Tomorrow 10 AM.', time: '5 hours ago', read: false },
+      { id: 3, title: 'Program Enrolled 🚀', desc: '12 new clients enrolled in your Ayurvedic Detox Protocol this week.', time: '1 day ago', read: true },
+    ];
+  });
+
+  const [promotedPrograms, setPromotedPrograms] = useState<number[]>(() => {
+    const stored = localStorage.getItem('coach_promoted_programs');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return []; }
+    }
+    return [];
+  });
+
+  const [joinedConsultations, setJoinedConsultations] = useState<number[]>(() => {
+    const stored = localStorage.getItem('coach_joined_consultations');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return []; }
+    }
+    return [];
+  });
+
+  const [clientMessages, setClientMessages] = useState<Record<number, { sender: 'coach' | 'client'; text: string; time: string }[]>>(() => {
+    const stored = localStorage.getItem('coach_client_messages');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return {}; }
+    }
+    return {
+      1: [{ sender: 'coach', text: 'Hi Meera, how is the detox diet going today?', time: 'Yesterday, 4:15 PM' }],
+      2: [{ sender: 'client', text: 'Coach, I had dairy by mistake. What should I do?', time: 'Today, 9:30 AM' }],
+    };
+  });
+
+  // Client section filters
+  const [clientSearch, setClientSearch] = useState('');
+  const [clientPlanFilter, setClientPlanFilter] = useState('All');
+  const [clientStatusFilter, setClientStatusFilter] = useState('All');
+
+  // Modal & interactive state toggles
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const [newClientOpen, setNewClientOpen] = useState(false);
   const [newProgramOpen, setNewProgramOpen] = useState(false);
   const [newConsultOpen, setNewConsultOpen] = useState(false);
   const [viewClientOpen, setViewClientOpen] = useState(false);
   const [viewProgramOpen, setViewProgramOpen] = useState(false);
   const [viewConsultOpen, setViewConsultOpen] = useState(false);
+  
   const [selectedClient, setSelectedClient] = useState<typeof INITIAL_CLIENTS[0] | null>(null);
   const [selectedProgram, setSelectedProgram] = useState<typeof INITIAL_PROGRAMS[0] | null>(null);
   const [selectedConsult, setSelectedConsult] = useState<typeof INITIAL_CONSULTATIONS[0] | null>(null);
+
+  // Client messaging modal states
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
+  const [messageTargetClient, setMessageTargetClient] = useState<typeof INITIAL_CLIENTS[0] | null>(null);
+  const [messageText, setMessageText] = useState('');
+
+  // Editing program modal states
+  const [editProgramOpen, setEditProgramOpen] = useState(false);
+  const [editProgramForm, setEditProgramForm] = useState({ id: 0, title: '', duration: '', price: '', category: 'Nutrition', description: '' });
+
+  // Rescheduling consultation states
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [rescheduleConsult, setRescheduleConsult] = useState<typeof INITIAL_CONSULTATIONS[0] | null>(null);
+  const [rescheduleForm, setRescheduleForm] = useState({ date: '', time: '' });
 
   // Forms
   const [clientForm, setClientForm] = useState({ name: '', email: '', phone: '', goal: '', plan: 'Basic', diet: 'Vegetarian', allergies: '', notes: '' });
   const [programForm, setProgramForm] = useState({ title: '', duration: '', price: '', category: 'Nutrition', description: '' });
   const [consultForm, setConsultForm] = useState({ client: '', type: 'Video Call', date: '', time: '', duration: '45 min', topic: '', notes: '' });
+
+  // Synchronization with LocalStorage
+  useEffect(() => { localStorage.setItem('coach_clients', JSON.stringify(clients)); }, [clients]);
+  useEffect(() => { localStorage.setItem('coach_programs', JSON.stringify(programs)); }, [programs]);
+  useEffect(() => { localStorage.setItem('coach_consultations', JSON.stringify(consultations)); }, [consultations]);
+  useEffect(() => { localStorage.setItem('coach_notifications', JSON.stringify(notifications)); }, [notifications]);
+  useEffect(() => { localStorage.setItem('coach_promoted_programs', JSON.stringify(promotedPrograms)); }, [promotedPrograms]);
+  useEffect(() => { localStorage.setItem('coach_joined_consultations', JSON.stringify(joinedConsultations)); }, [joinedConsultations]);
+  useEffect(() => { localStorage.setItem('coach_client_messages', JSON.stringify(clientMessages)); }, [clientMessages]);
 
   if (!user) { navigate('/login', { replace: true }); return null; }
   const handleLogout = () => { logout(); toast.success('See you soon! Namaste 🙏'); navigate('/'); };
@@ -106,8 +195,9 @@ const CoachDashboard = () => {
   const handleAddClient = (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientForm.name || !clientForm.email) { toast.error('Name and email are required'); return; }
+    const nextId = clients.length > 0 ? Math.max(...clients.map(c => c.id)) + 1 : 1;
     const newClient = {
-      id: clients.length + 1,
+      id: nextId,
       name: clientForm.name, email: clientForm.email, phone: clientForm.phone,
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(clientForm.name)}&background=84A98C&color=fff`,
       goal: clientForm.goal || 'General Wellness', sessions: 0, progress: 0,
@@ -117,14 +207,15 @@ const CoachDashboard = () => {
     setClients(prev => [newClient, ...prev]);
     setNewClientOpen(false);
     setClientForm({ name: '', email: '', phone: '', goal: '', plan: 'Basic', diet: 'Vegetarian', allergies: '', notes: '' });
-    toast.success(`Client "${newClient.name}" added!`);
+    toast.success(`Client "${newClient.name}" onboarded!`);
   };
 
   const handleAddProgram = (e: React.FormEvent) => {
     e.preventDefault();
     if (!programForm.title || !programForm.price) { toast.error('Title and price are required'); return; }
+    const nextId = programs.length > 0 ? Math.max(...programs.map(p => p.id)) + 1 : 1;
     const newProgram = {
-      id: programs.length + 1,
+      id: nextId,
       title: programForm.title, duration: programForm.duration || '30 days',
       enrolled: 0, rating: 0, price: Number(programForm.price),
       category: programForm.category, description: programForm.description,
@@ -138,10 +229,17 @@ const CoachDashboard = () => {
   const handleAddConsult = (e: React.FormEvent) => {
     e.preventDefault();
     if (!consultForm.client || !consultForm.date) { toast.error('Client and date are required'); return; }
+    const nextId = consultations.length > 0 ? Math.max(...consultations.map(c => c.id)) + 1 : 1;
+    
+    const formattedDate = new Date(`${consultForm.date}T${consultForm.time || '12:00'}`);
+    const dateStr = formattedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const timeStr = formattedDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const finalTime = `${dateStr}, ${timeStr}`;
+
     const newConsult = {
-      id: consultations.length + 1,
+      id: nextId,
       client: consultForm.client, type: consultForm.type,
-      time: `${consultForm.date}, ${consultForm.time}`,
+      time: finalTime,
       duration: consultForm.duration, topic: consultForm.topic || 'General Check-in',
       notes: consultForm.notes,
       avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(consultForm.client)}&background=84A98C&color=fff`,
@@ -150,6 +248,72 @@ const CoachDashboard = () => {
     setNewConsultOpen(false);
     setConsultForm({ client: '', type: 'Video Call', date: '', time: '', duration: '45 min', topic: '', notes: '' });
     toast.success('Consultation scheduled!');
+  };
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!messageTargetClient || !messageText.trim()) return;
+    
+    const newMsg: { sender: 'coach' | 'client'; text: string; time: string } = {
+      sender: 'coach',
+      text: messageText,
+      time: 'Just now'
+    };
+
+    setClientMessages(prev => {
+      const existing = prev[messageTargetClient.id] || [];
+      return {
+        ...prev,
+        [messageTargetClient.id]: [...existing, newMsg]
+      };
+    });
+
+    setMessageText('');
+    toast.success(`Message sent to ${messageTargetClient.name}`);
+  };
+
+  const handleEditProgramSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editProgramForm.title || !editProgramForm.price) { toast.error('Title and price are required'); return; }
+
+    setPrograms(prev => prev.map(p => p.id === editProgramForm.id ? {
+      ...p,
+      title: editProgramForm.title,
+      duration: editProgramForm.duration,
+      price: Number(editProgramForm.price),
+      category: editProgramForm.category,
+      description: editProgramForm.description,
+    } : p));
+
+    setEditProgramOpen(false);
+    toast.success('Program updated successfully');
+  };
+
+  const handleRescheduleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rescheduleConsult || !rescheduleForm.date || !rescheduleForm.time) { toast.error('Date and time are required'); return; }
+
+    const formattedDate = new Date(`${rescheduleForm.date}T${rescheduleForm.time}`);
+    const dateStr = formattedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const timeStr = formattedDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const finalTime = `${dateStr}, ${timeStr}`;
+
+    setConsultations(prev => prev.map(item => item.id === rescheduleConsult.id ? {
+      ...item,
+      time: finalTime
+    } : item));
+
+    const newNotif = {
+      id: Date.now(),
+      title: 'Consultation Rescheduled 📅',
+      desc: `You rescheduled the consultation with ${rescheduleConsult.client} to ${finalTime}.`,
+      time: 'Just now',
+      read: false
+    };
+    setNotifications(prev => [newNotif, ...prev]);
+
+    setRescheduleOpen(false);
+    toast.success('Consultation rescheduled successfully!');
   };
 
   return (
@@ -203,10 +367,50 @@ const CoachDashboard = () => {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <button className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-muted relative">
-              <Bell size={18} />
-              <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
-            </button>
+            <div className="relative">
+              <button onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
+                className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-muted relative">
+                <Bell size={18} />
+                {notifications.some(n => !n.read) && (
+                  <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
+                )}
+              </button>
+              {notifDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setNotifDropdownOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-xl shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="flex items-center justify-between px-4 py-2 border-b border-border mb-1">
+                      <span className="font-semibold text-sm">Notifications</span>
+                      <button onClick={() => { setNotifications(prev => prev.map(n => ({ ...n, read: true }))); toast.success('All marked as read'); }}
+                        className="text-xs hover:underline font-semibold" style={{ color: ACCENT }}>
+                        Mark all read
+                      </button>
+                    </div>
+                    <div className="max-h-64 overflow-y-auto divide-y divide-border/60">
+                      {notifications.length === 0 ? (
+                        <p className="text-center text-xs text-muted-foreground py-6">No new notifications</p>
+                      ) : (
+                        notifications.map(n => (
+                          <div key={n.id} className={`p-3 text-left hover:bg-muted/40 transition-colors ${!n.read ? 'bg-muted/20 font-medium' : ''}`}>
+                            <div className="flex justify-between gap-2 mb-1">
+                              <span className="font-semibold text-xs truncate">{n.title}</span>
+                              <span className="text-[10px] text-muted-foreground shrink-0">{n.time}</span>
+                            </div>
+                            <p className="text-muted-foreground text-[11px] leading-relaxed">{n.desc}</p>
+                            {!n.read && (
+                              <button onClick={() => setNotifications(prev => prev.map(item => item.id === n.id ? { ...item, read: true } : item))}
+                                className="text-[10px] mt-1.5 hover:underline block font-semibold" style={{ color: ACCENT }}>
+                                Mark as read
+                              </button>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
             <Link to="/profile">
               <img src={user.avatar} alt={user.name} className="w-9 h-9 rounded-full object-cover border-2" style={{ borderColor: ACCENT }} />
             </Link>
@@ -252,7 +456,16 @@ const CoachDashboard = () => {
                       <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'} />
                       <XAxis dataKey="month" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))' }} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: isDark ? 'hsl(var(--card))' : '#ffffff', 
+                          borderColor: isDark ? 'hsl(var(--border))' : '#e2e8f0', 
+                          borderRadius: '12px',
+                          color: isDark ? 'hsl(var(--foreground))' : '#000000'
+                        }} 
+                        itemStyle={{ color: isDark ? 'hsl(var(--foreground))' : '#000000' }}
+                        labelStyle={{ color: isDark ? 'hsl(var(--foreground))' : '#000000', fontWeight: 600 }}
+                      />
                       <Area type="monotone" dataKey="clients" name="Clients" stroke="hsl(160,40%,50%)" fill="url(#gClients)" strokeWidth={2} />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -268,10 +481,20 @@ const CoachDashboard = () => {
                         </div>
                         <div className="text-xs text-muted-foreground mb-1">{c.time} · {c.duration}</div>
                         <div className="text-xs text-muted-foreground mb-2">{c.topic}</div>
-                        <button onClick={() => toast.success(`Joining session with ${c.client}`)}
-                          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg text-white"
-                          style={{ background: ACCENT }}>
-                          <Video size={10} /> Join
+                        <button 
+                          onClick={() => {
+                            const isJoined = joinedConsultations.includes(c.id);
+                            if (isJoined) {
+                              setJoinedConsultations(prev => prev.filter(id => id !== c.id));
+                              toast.success(`Left session with ${c.client}`);
+                            } else {
+                              setJoinedConsultations(prev => [...prev, c.id]);
+                              toast.success(`Joined session with ${c.client}!`);
+                            }
+                          }}
+                          className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all ${joinedConsultations.includes(c.id) ? 'bg-muted text-muted-foreground border border-border' : 'text-white'}`}
+                          style={!joinedConsultations.includes(c.id) ? { background: ACCENT } : {}}>
+                          <Video size={10} /> {joinedConsultations.includes(c.id) ? 'Joined ✓' : 'Join'}
                         </button>
                       </div>
                     ))}
@@ -322,79 +545,149 @@ const CoachDashboard = () => {
           )}
 
           {/* ── Clients ── */}
-          {activeNav === 'clients' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold">My Clients</h2>
-                  <p className="text-sm text-muted-foreground">Track progress and health journeys</p>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => toast.info('Filter applied')} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm border border-border hover:bg-muted transition-colors">
-                    <Filter size={14} /> Filter
-                  </button>
+          {activeNav === 'clients' && (() => {
+            const filteredClients = clients.filter(c => {
+              const matchesSearch = c.name.toLowerCase().includes(clientSearch.toLowerCase()) || 
+                                    c.email.toLowerCase().includes(clientSearch.toLowerCase());
+              const matchesPlan = clientPlanFilter === 'All' || c.plan === clientPlanFilter;
+              const matchesStatus = clientStatusFilter === 'All' || c.status === clientStatusFilter;
+              return matchesSearch && matchesPlan && matchesStatus;
+            });
+
+            return (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <h2 className="text-xl font-bold">My Clients</h2>
+                    <p className="text-sm text-muted-foreground">Track progress and health journeys</p>
+                  </div>
                   <button onClick={() => setNewClientOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
                     style={{ background: ACCENT }}>
                     <Plus size={15} /> Add Client
                   </button>
                 </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                {clients.map((c) => (
-                  <div key={c.id} className="card-wellness hover:shadow-md transition-all">
-                    <div className="flex items-start gap-3 mb-4">
-                      <img src={c.avatar} alt={c.name} className="w-10 h-10 rounded-full shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold text-sm">{c.name}</span>
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.status === 'active' ? 'bg-green-100 text-green-700' : c.status === 'new' ? 'bg-blue-100 text-blue-700' : 'bg-muted text-muted-foreground'}`}>{c.status}</span>
+
+                {/* Filter bar */}
+                <div className="flex flex-col md:flex-row gap-3 items-center justify-between p-4 bg-muted/40 rounded-2xl">
+                  <div className="relative w-full md:w-72">
+                    <input
+                      type="text"
+                      placeholder="Search by name or email..."
+                      value={clientSearch}
+                      onChange={e => setClientSearch(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 rounded-xl text-sm border border-border bg-background focus:outline-none focus:ring-2 focus:ring-sage-light focus:border-sage"
+                    />
+                    <div className="absolute left-3 top-2.5 text-muted-foreground">
+                      <Filter size={15} />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 w-full md:w-auto flex-wrap">
+                    <select
+                      value={clientPlanFilter}
+                      onChange={e => setClientPlanFilter(e.target.value)}
+                      className="px-3 py-2 rounded-xl text-xs border border-border bg-background font-medium focus:outline-none"
+                    >
+                      <option value="All">All Plans</option>
+                      <option value="Free">Free</option>
+                      <option value="Basic">Basic</option>
+                      <option value="Premium">Premium</option>
+                      <option value="Elite">Elite</option>
+                    </select>
+                    <select
+                      value={clientStatusFilter}
+                      onChange={e => setClientStatusFilter(e.target.value)}
+                      className="px-3 py-2 rounded-xl text-xs border border-border bg-background font-medium focus:outline-none"
+                    >
+                      <option value="All">All Statuses</option>
+                      <option value="active">Active</option>
+                      <option value="new">New</option>
+                      <option value="completed">Completed</option>
+                    </select>
+                    {(clientSearch || clientPlanFilter !== 'All' || clientStatusFilter !== 'All') && (
+                      <button
+                        onClick={() => {
+                          setClientSearch('');
+                          setClientPlanFilter('All');
+                          setClientStatusFilter('All');
+                        }}
+                        className="text-xs hover:underline font-semibold" style={{ color: ACCENT }}
+                      >
+                        Reset filters
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                  {filteredClients.map((c) => (
+                    <div key={c.id} className="card-wellness hover:shadow-md transition-all">
+                      <div className="flex items-start gap-3 mb-4">
+                        <img src={c.avatar} alt={c.name} className="w-10 h-10 rounded-full shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-sm">{c.name}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.status === 'active' ? 'bg-green-100 text-green-700' : c.status === 'new' ? 'bg-blue-100 text-blue-700' : 'bg-muted text-muted-foreground'}`}>{c.status}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5">{c.goal}</div>
                         </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">{c.goal}</div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div className="p-2 rounded-lg bg-muted/50 text-center">
+                          <div className="text-sm font-bold">{c.sessions}</div>
+                          <div className="text-xs text-muted-foreground">Sessions</div>
+                        </div>
+                        <div className="p-2 rounded-lg bg-muted/50 text-center">
+                          <div className="text-sm font-bold" style={{ color: ACCENT }}>{c.progress}%</div>
+                          <div className="text-xs text-muted-foreground">Progress</div>
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <div className="h-2 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${c.progress}%`, background: ACCENT }} />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+                        <Clock size={11} /> Next: {c.nextSession}
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => { setMessageTargetClient(c); setMessageModalOpen(true); }}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold border border-border hover:bg-muted transition-colors">
+                          <MessageSquare size={12} /> Message
+                        </button>
+                        <button onClick={() => { setSelectedClient(c); setViewClientOpen(true); }}
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                          style={{ background: ACCENT }}>
+                          View Plan
+                        </button>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      <div className="p-2 rounded-lg bg-muted/50 text-center">
-                        <div className="text-sm font-bold">{c.sessions}</div>
-                        <div className="text-xs text-muted-foreground">Sessions</div>
-                      </div>
-                      <div className="p-2 rounded-lg bg-muted/50 text-center">
-                        <div className="text-sm font-bold" style={{ color: ACCENT }}>{c.progress}%</div>
-                        <div className="text-xs text-muted-foreground">Progress</div>
-                      </div>
-                    </div>
-                    <div className="mb-4">
-                      <div className="h-2 rounded-full bg-muted overflow-hidden">
-                        <div className="h-full rounded-full transition-all" style={{ width: `${c.progress}%`, background: ACCENT }} />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-                      <Clock size={11} /> Next: {c.nextSession}
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => toast.success(`Opening chat with ${c.name}`)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold border border-border hover:bg-muted transition-colors">
-                        <MessageSquare size={12} /> Message
+                  ))}
+                  
+                  {filteredClients.length === 0 && (
+                    <div className="col-span-full card-wellness py-12 text-center">
+                      <Users size={32} className="mx-auto text-muted-foreground mb-2" />
+                      <p className="font-semibold text-sm">No matching clients found</p>
+                      <p className="text-xs text-muted-foreground mt-1">Try resetting or modifying your filters</p>
+                      <button onClick={() => { setClientSearch(''); setClientPlanFilter('All'); setClientStatusFilter('All'); }}
+                        className="mt-3 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all" style={{ background: ACCENT }}>
+                        Reset Filters
                       </button>
-                      <button onClick={() => { setSelectedClient(c); setViewClientOpen(true); }}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-white"
-                        style={{ background: ACCENT }}>
-                        View Plan
-                      </button>
                     </div>
+                  )}
+
+                  <div className="card-wellness border-dashed border-2 flex flex-col items-center justify-center py-10 text-center hover:bg-muted/30 transition-colors cursor-pointer animate-pulse-soft"
+                    onClick={() => setNewClientOpen(true)}>
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3" style={{ background: ACCENT_BG }}>
+                      <Plus size={20} style={{ color: ACCENT }} />
+                    </div>
+                    <p className="text-sm font-semibold">Add New Client</p>
+                    <p className="text-xs text-muted-foreground mt-1">Start a new wellness journey</p>
                   </div>
-                ))}
-                <div className="card-wellness border-dashed border-2 flex flex-col items-center justify-center py-10 text-center hover:bg-muted/30 transition-colors cursor-pointer"
-                  onClick={() => setNewClientOpen(true)}>
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3" style={{ background: ACCENT_BG }}>
-                    <Plus size={20} style={{ color: ACCENT }} />
-                  </div>
-                  <p className="text-sm font-semibold">Add New Client</p>
-                  <p className="text-xs text-muted-foreground mt-1">Start a new wellness journey</p>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* ── Programs ── */}
           {activeNav === 'programs' && (
@@ -441,14 +734,29 @@ const CoachDashboard = () => {
                         className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold border border-border hover:bg-muted transition-colors">
                         <FileText size={12} /> View
                       </button>
-                      <button onClick={() => toast.success(`Editing: ${p.title}`)}
+                      <button onClick={() => {
+                        setSelectedProgram(p);
+                        setEditProgramForm({ id: p.id, title: p.title, duration: p.duration, price: String(p.price), category: p.category, description: p.description });
+                        setEditProgramOpen(true);
+                      }}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold border border-border hover:bg-muted transition-colors">
                         <Edit2 size={12} /> Edit
                       </button>
-                      <button onClick={() => toast.success('Program promoted!')}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-white"
-                        style={{ background: ACCENT }}>
-                        Promote
+                      <button 
+                        onClick={() => {
+                          const isPromoted = promotedPrograms.includes(p.id);
+                          if (isPromoted) {
+                            setPromotedPrograms(prev => prev.filter(id => id !== p.id));
+                            toast.success('Program promotion cancelled');
+                          } else {
+                            setPromotedPrograms(prev => [...prev, p.id]);
+                            toast.success('Program promoted!');
+                          }
+                        }}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all ${promotedPrograms.includes(p.id) ? 'bg-muted text-muted-foreground border border-border' : 'text-white'}`}
+                        style={!promotedPrograms.includes(p.id) ? { background: ACCENT } : {}}
+                      >
+                        {promotedPrograms.includes(p.id) ? 'Promoted ✓' : 'Promote'}
                       </button>
                     </div>
                   </div>
@@ -504,14 +812,29 @@ const CoachDashboard = () => {
                         className="flex-1 py-2 rounded-xl text-xs font-semibold border border-border hover:bg-muted transition-colors flex items-center justify-center gap-1">
                         <FileText size={11} /> Details
                       </button>
-                      <button onClick={() => toast.success(`Reschedule requested for ${c.client}`)}
+                      <button onClick={() => {
+                        setRescheduleConsult(c);
+                        setRescheduleForm({ date: '', time: '' });
+                        setRescheduleOpen(true);
+                      }}
                         className="flex-1 py-2 rounded-xl text-xs font-semibold border border-border hover:bg-muted transition-colors">
                         Reschedule
                       </button>
-                      <button onClick={() => toast.success(`Joining session with ${c.client}`)}
-                        className="flex-1 py-2 rounded-xl text-xs font-semibold text-white"
-                        style={{ background: ACCENT }}>
-                        Join
+                      <button 
+                        onClick={() => {
+                          const isJoined = joinedConsultations.includes(c.id);
+                          if (isJoined) {
+                            setJoinedConsultations(prev => prev.filter(id => id !== c.id));
+                            toast.success(`Left session with ${c.client}`);
+                          } else {
+                            setJoinedConsultations(prev => [...prev, c.id]);
+                            toast.success(`Joined session with ${c.client}!`);
+                          }
+                        }}
+                        className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${joinedConsultations.includes(c.id) ? 'bg-muted text-muted-foreground border border-border' : 'text-white'}`}
+                        style={!joinedConsultations.includes(c.id) ? { background: ACCENT } : {}}
+                      >
+                        {joinedConsultations.includes(c.id) ? 'Joined ✓' : 'Join'}
                       </button>
                     </div>
                   </div>
@@ -562,7 +885,16 @@ const CoachDashboard = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'} />
                     <XAxis dataKey="month" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))' }} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: isDark ? 'hsl(var(--card))' : '#ffffff', 
+                        borderColor: isDark ? 'hsl(var(--border))' : '#e2e8f0', 
+                        borderRadius: '12px',
+                        color: isDark ? 'hsl(var(--foreground))' : '#000000'
+                      }} 
+                      itemStyle={{ color: isDark ? 'hsl(var(--foreground))' : '#000000' }}
+                      labelStyle={{ color: isDark ? 'hsl(var(--foreground))' : '#000000', fontWeight: 600 }}
+                    />
                     <Area type="monotone" dataKey="clients" name="Clients" stroke="hsl(160,40%,50%)" fill="url(#gC2)" strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -780,7 +1112,11 @@ const CoachDashboard = () => {
             </div>
 
             <div className="flex gap-3">
-              <button onClick={() => { toast.success(`Message sent to ${selectedClient.name}`); setViewClientOpen(false); }}
+              <button onClick={() => { 
+                setMessageTargetClient(selectedClient);
+                setMessageModalOpen(true);
+                setViewClientOpen(false);
+              }}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-border hover:bg-muted transition-colors flex items-center justify-center gap-2">
                 <MessageSquare size={14} /> Message
               </button>
@@ -820,14 +1156,30 @@ const CoachDashboard = () => {
               <p className="text-sm leading-relaxed">{selectedProgram.description || 'No description provided.'}</p>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => { toast.success(`Editing: ${selectedProgram.title}`); setViewProgramOpen(false); }}
+              <button onClick={() => { 
+                setEditProgramForm({ id: selectedProgram.id, title: selectedProgram.title, duration: selectedProgram.duration, price: String(selectedProgram.price), category: selectedProgram.category, description: selectedProgram.description });
+                setEditProgramOpen(true);
+                setViewProgramOpen(false);
+              }}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-border hover:bg-muted transition-colors flex items-center justify-center gap-2">
                 <Edit2 size={14} /> Edit Program
               </button>
-              <button onClick={() => { toast.success('Program promoted!'); setViewProgramOpen(false); }}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
-                style={{ background: ACCENT }}>
-                Promote
+              <button 
+                onClick={() => {
+                  const isPromoted = promotedPrograms.includes(selectedProgram.id);
+                  if (isPromoted) {
+                    setPromotedPrograms(prev => prev.filter(id => id !== selectedProgram.id));
+                    toast.success('Program promotion cancelled');
+                  } else {
+                    setPromotedPrograms(prev => [...prev, selectedProgram.id]);
+                    toast.success('Program promoted!');
+                  }
+                  setViewProgramOpen(false);
+                }}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${promotedPrograms.includes(selectedProgram.id) ? 'bg-muted text-muted-foreground border border-border' : 'text-white'}`}
+                style={!promotedPrograms.includes(selectedProgram.id) ? { background: ACCENT } : {}}
+              >
+                {promotedPrograms.includes(selectedProgram.id) ? 'Promoted ✓' : 'Promote'}
               </button>
             </div>
           </div>
@@ -864,16 +1216,133 @@ const CoachDashboard = () => {
               </div>
             )}
             <div className="flex gap-3">
-              <button onClick={() => { toast.success('Reschedule requested'); setViewConsultOpen(false); }}
+              <button onClick={() => { 
+                setRescheduleConsult(selectedConsult);
+                setRescheduleForm({ date: '', time: '' });
+                setRescheduleOpen(true);
+                setViewConsultOpen(false);
+              }}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-border hover:bg-muted transition-colors">Reschedule</button>
-              <button onClick={() => { toast.success(`Joining session with ${selectedConsult.client}`); setViewConsultOpen(false); }}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
-                style={{ background: ACCENT }}>
-                <Video size={14} /> Join Session
+              <button 
+                onClick={() => {
+                  const isJoined = joinedConsultations.includes(selectedConsult.id);
+                  if (isJoined) {
+                    setJoinedConsultations(prev => prev.filter(id => id !== selectedConsult.id));
+                    toast.success(`Left session with ${selectedConsult.client}`);
+                  } else {
+                    setJoinedConsultations(prev => [...prev, selectedConsult.id]);
+                    toast.success(`Joined session with ${selectedConsult.client}!`);
+                  }
+                  setViewConsultOpen(false);
+                }}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${joinedConsultations.includes(selectedConsult.id) ? 'bg-muted text-muted-foreground border border-border' : 'text-white'}`}
+                style={!joinedConsultations.includes(selectedConsult.id) ? { background: ACCENT } : {}}
+              >
+                <Video size={14} /> {joinedConsultations.includes(selectedConsult.id) ? 'Joined ✓' : 'Join Session'}
               </button>
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* ── Modal: Message Client ── */}
+      <Modal open={messageModalOpen} onClose={() => setMessageModalOpen(false)} title={`Chat with ${messageTargetClient?.name}`} subtitle={messageTargetClient?.goal} accentColor={ACCENT}>
+        {messageTargetClient && (
+          <div className="flex flex-col h-[400px]">
+            {/* Message history */}
+            <div className="flex-1 overflow-y-auto space-y-3 p-3 bg-muted/40 rounded-xl mb-4 border border-border">
+              {(clientMessages[messageTargetClient.id] || []).length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center py-10">
+                  <MessageSquare size={24} className="text-muted-foreground mb-1.5" />
+                  <p className="text-xs font-semibold">No messages yet</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Send a message to start the conversation.</p>
+                </div>
+              ) : (
+                (clientMessages[messageTargetClient.id] || []).map((msg, i) => (
+                  <div key={i} className={`flex flex-col max-w-[80%] ${msg.sender === 'coach' ? 'ml-auto items-end' : 'mr-auto items-start'}`}>
+                    <div className={`p-2.5 rounded-2xl text-xs ${msg.sender === 'coach' ? 'bg-[#102a1e] text-white rounded-tr-none' : 'bg-card text-foreground rounded-tl-none border border-border'}`}
+                         style={msg.sender === 'coach' ? { background: ACCENT } : {}}>
+                      {msg.text}
+                    </div>
+                    <span className="text-[9px] text-muted-foreground mt-1 px-1">{msg.time}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            {/* Input form */}
+            <form onSubmit={handleSendMessage} className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Type a message..."
+                value={messageText}
+                onChange={e => setMessageText(e.target.value)}
+                className={`${inputClass} flex-1`}
+              />
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-white shrink-0 transition-opacity hover:opacity-90 animate-pulse-soft"
+                style={{ background: ACCENT }}
+              >
+                Send
+              </button>
+            </form>
+          </div>
+        )}
+      </Modal>
+
+      {/* ── Modal: Edit Program ── */}
+      <Modal open={editProgramOpen} onClose={() => setEditProgramOpen(false)} title="Edit Wellness Program" subtitle="Update nutrition or wellness program parameters" accentColor={ACCENT}>
+        <form onSubmit={handleEditProgramSubmit} className="space-y-4">
+          <FormField label="Program Title" required>
+            <input value={editProgramForm.title} onChange={e => setEditProgramForm(p => ({ ...p, title: e.target.value }))}
+              placeholder="e.g. 21-Day Ayurvedic Detox" className={inputClass} />
+          </FormField>
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Duration" hint="e.g. 21 days">
+              <input value={editProgramForm.duration} onChange={e => setEditProgramForm(p => ({ ...p, duration: e.target.value }))}
+                placeholder="21 days" className={inputClass} />
+            </FormField>
+            <FormField label="Category">
+              <select value={editProgramForm.category} onChange={e => setEditProgramForm(p => ({ ...p, category: e.target.value }))} className={selectClass}>
+                {['Nutrition', 'Detox', 'Wellness', 'Gut Health', 'Weight Loss', 'Hormones', 'Immunity'].map(c => <option key={c}>{c}</option>)}
+              </select>
+            </FormField>
+          </div>
+          <FormField label="Price (₹)" required>
+            <input type="number" value={editProgramForm.price} onChange={e => setEditProgramForm(p => ({ ...p, price: e.target.value }))}
+              placeholder="e.g. 2999" className={inputClass} />
+          </FormField>
+          <FormField label="Description">
+            <textarea value={editProgramForm.description} onChange={e => setEditProgramForm(p => ({ ...p, description: e.target.value }))}
+              placeholder="Describe what clients will achieve, the approach, and key components..." rows={3} className={textareaClass} />
+          </FormField>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={() => setEditProgramOpen(false)}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-border hover:bg-muted transition-colors">Cancel</button>
+            <button type="submit" className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+              style={{ background: ACCENT }}>Save Changes</button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── Modal: Reschedule Consultation ── */}
+      <Modal open={rescheduleOpen} onClose={() => setRescheduleOpen(false)} title="Reschedule Session" subtitle={rescheduleConsult ? `Rescheduling: ${rescheduleConsult.client}` : ''} accentColor={ACCENT}>
+        <form onSubmit={handleRescheduleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="New Date" required>
+              <input type="date" value={rescheduleForm.date} onChange={e => setRescheduleForm(p => ({ ...p, date: e.target.value }))} className={inputClass} />
+            </FormField>
+            <FormField label="New Time" required>
+              <input type="time" value={rescheduleForm.time} onChange={e => setRescheduleForm(p => ({ ...p, time: e.target.value }))} className={inputClass} />
+            </FormField>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={() => setRescheduleOpen(false)}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-border hover:bg-muted transition-colors">Cancel</button>
+            <button type="submit" className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
+              style={{ background: ACCENT }}>Reschedule Session</button>
+          </div>
+        </form>
       </Modal>
     </div>
   );
