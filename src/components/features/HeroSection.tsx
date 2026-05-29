@@ -1,11 +1,20 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Play, Star, ArrowRight, Sparkles } from 'lucide-react';
 import heroImage from '@/assets/hero-yoga.jpg';
 import { AnimatedCounter } from './AnimatedCounter';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 
 export function HeroSection() {
   const { user } = useAuth();
+  const [showDemoVideo, setShowDemoVideo] = useState(false);
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
       {/* Background */}
@@ -47,7 +56,10 @@ export function HeroSection() {
             <Link to={user ? "/dashboard" : "/register"} className="btn-accent text-base px-8 py-3.5">
               Begin Your Journey <ArrowRight size={18} />
             </Link>
-            <button className="inline-flex items-center gap-3 px-6 py-3.5 rounded-xl border border-border bg-background/70 backdrop-blur-sm hover:bg-background/90 transition-all duration-200 text-sm font-medium">
+            <button 
+              onClick={() => setShowDemoVideo(true)}
+              className="inline-flex items-center gap-3 px-6 py-3.5 rounded-xl border border-border bg-background/70 backdrop-blur-sm hover:bg-background/90 transition-all duration-200 text-sm font-medium"
+            >
               <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: 'hsl(133 18% 59%)' }}>
                 <Play size={14} className="text-white ml-0.5" fill="white" />
               </div>
@@ -96,6 +108,34 @@ export function HeroSection() {
           ))}
         </div>
       </div>
+
+      {/* Video Demo Dialog */}
+      <Dialog open={showDemoVideo} onOpenChange={setShowDemoVideo}>
+        <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-black border-neutral-800 shadow-2xl">
+          <div className="p-6 pb-4 text-white bg-neutral-950 border-b border-neutral-900">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold flex items-center gap-2" style={{ fontFamily: 'Playfair Display, serif' }}>
+                <Sparkles className="text-[#e28743] animate-pulse h-5 w-5" />
+                YogicTown: Find Your Inner Peace
+              </DialogTitle>
+              <DialogDescription className="text-neutral-400 text-sm">
+                Explore how AI wellness coaching, certified trainers, and immersive retreats integrate into your custom yoga and fitness journey.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="relative aspect-video w-full bg-black">
+            {showDemoVideo && (
+              <iframe
+                className="w-full h-full border-0"
+                src="https://www.youtube.com/embed/b1H3uo9FpSA?autoplay=1&rel=0&modestbranding=1&showinfo=0"
+                title="YogicTown Demo Video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              ></iframe>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
