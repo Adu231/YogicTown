@@ -127,7 +127,7 @@ export function HeroSection() {
             {showDemoVideo && (
               <iframe
                 className="w-full h-full border-0"
-                src="https://www.youtube.com/embed/b1H3uo9FpSA?autoplay=1&rel=0&modestbranding=1&showinfo=0"
+                src="https://www.youtube.com/embed/inpok4MKVLM?autoplay=1&mute=1&rel=0"
                 title="YogicTown Demo Video"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
