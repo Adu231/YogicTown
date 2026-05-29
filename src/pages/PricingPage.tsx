@@ -7,6 +7,7 @@ import { FAQSection } from '@/components/features/FAQSection';
 import { TestimonialsSection } from '@/components/features/TestimonialsSection';
 import { CTABannerSection } from '@/components/features/CTABannerSection';
 import { Leaf, Check } from 'lucide-react';
+import { useTheme } from '@/hooks/useTheme';
 
 const COMPARISON = [
   { feature: 'Free yoga classes', seeker: '20+', practitioner: 'Unlimited', yogi: 'Unlimited', master: 'Unlimited' },
@@ -23,6 +24,7 @@ const COMPARISON = [
 
 const PricingPage = () => {
   useScrollTop();
+  const { isDark } = useTheme();
 
   const renderVal = (val: string | boolean | undefined) => {
     if (val === true) return <Check size={16} style={{ color: 'hsl(133 18% 59%)' }} className="mx-auto" />;
@@ -35,10 +37,10 @@ const PricingPage = () => {
       <Navbar />
       <main className="pt-16">
         {/* Hero */}
-        <section className="section-padding" style={{ background: 'linear-gradient(135deg, hsl(133 20% 96%) 0%, hsl(60 17% 98%) 100%)' }}>
+        <section className="section-padding" style={{ background: isDark ? 'linear-gradient(135deg, hsl(150 15% 12%) 0%, hsl(150 15% 8%) 100%)' : 'linear-gradient(135deg, hsl(133 20% 96%) 0%, hsl(60 17% 98%) 100%)' }}>
           <div className="max-w-3xl mx-auto text-center">
             <div className="tag-pill mx-auto mb-5 w-fit"><Leaf size={12} /> Membership Plans</div>
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight text-foreground">
               Invest in Your<br />
               <span className="italic" style={{ color: 'hsl(27 87% 60%)' }}>Wellbeing</span>
             </h1>

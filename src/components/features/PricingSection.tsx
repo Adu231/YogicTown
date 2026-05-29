@@ -3,20 +3,22 @@ import { Link } from 'react-router-dom';
 import { Check, Sparkles } from 'lucide-react';
 import { PRICING_PLANS } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from '@/hooks/useTheme';
 
 export function PricingSection() {
   const { user } = useAuth();
+  const { isDark } = useTheme();
   const [isYearly, setIsYearly] = useState(false);
 
   return (
-    <section className="section-padding" style={{ background: 'hsl(60 17% 98%)' }}>
+    <section className="section-padding border-y border-border/30" style={{ background: isDark ? 'hsl(150 15% 12%)' : 'hsl(60 17% 98%)' }}>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
           <div className="tag-pill mx-auto mb-4 w-fit">
             <Sparkles size={12} /> Membership Plans
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
             Simple, Transparent<br />
             <span className="italic" style={{ color: 'hsl(27 87% 60%)' }}>Pricing</span>
           </h2>
