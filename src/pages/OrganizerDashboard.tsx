@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Leaf, Home, MapPin, Calendar, Users, BarChart3, Settings, LogOut,
   Menu, X, Bell, Plus, DollarSign, Star, Clock,
   Edit2, Eye, CheckCircle, Ticket, Globe, Filter, Trash2,
-  Mail, Phone, Hash, FileText,
+  Mail, Phone, Hash, FileText, Search,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
@@ -70,9 +70,64 @@ const OrganizerDashboard = () => {
   const [activeNav, setActiveNav] = useState('overview');
 
   // Data state
-  const [retreats, setRetreats] = useState(INITIAL_RETREATS);
-  const [bookings, setBookings] = useState(INITIAL_BOOKINGS);
-  const [events, setEvents] = useState(INITIAL_EVENTS);
+  const [retreats, setRetreats] = useState(() => {
+    const stored = localStorage.getItem('organizer_retreats');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { }
+    }
+    return INITIAL_RETREATS;
+  });
+
+  const [bookings, setBookings] = useState(() => {
+    const stored = localStorage.getItem('organizer_bookings');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { }
+    }
+    return INITIAL_BOOKINGS;
+  });
+
+  const [events, setEvents] = useState(() => {
+    const stored = localStorage.getItem('organizer_events');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { }
+    }
+    return INITIAL_EVENTS;
+  });
+
+  // Notifications State
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState(() => {
+    const stored = localStorage.getItem('organizer_notifications');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { }
+    }
+    return [
+      { id: 1, title: 'New Booking Confirmed! 🎉', desc: 'Meera Singh booked 7-Day Himalayan Yoga Retreat.', time: '2h ago', read: false },
+      { id: 2, title: 'Payout Released 💳', desc: 'Payout of ₹3,90,000 has been transferred successfully.', time: '1d ago', read: true },
+    ];
+  });
+
+  // Bookings list filtering state
+  const [bookingStatusFilter, setBookingStatusFilter] = useState('All');
+  const [bookingRetreatFilter, setBookingRetreatFilter] = useState('All');
+  const [bookingSearchQuery, setBookingSearchQuery] = useState('');
+
+  // Sync state to localStorage
+  useEffect(() => {
+    localStorage.setItem('organizer_retreats', JSON.stringify(retreats));
+  }, [retreats]);
+
+  useEffect(() => {
+    localStorage.setItem('organizer_bookings', JSON.stringify(bookings));
+  }, [bookings]);
+
+  useEffect(() => {
+    localStorage.setItem('organizer_events', JSON.stringify(events));
+  }, [events]);
+
+  useEffect(() => {
+    localStorage.setItem('organizer_notifications', JSON.stringify(notifications));
+  }, [notifications]);
 
   // Modal states
   const [newRetreatOpen, setNewRetreatOpen] = useState(false);
@@ -84,6 +139,9 @@ const OrganizerDashboard = () => {
   const [selectedBooking, setSelectedBooking] = useState<typeof INITIAL_BOOKINGS[0] | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<typeof INITIAL_EVENTS[0] | null>(null);
 
+  const [editingRetreat, setEditingRetreat] = useState<typeof INITIAL_RETREATS[0] | null>(null);
+  const [editingEvent, setEditingEvent] = useState<typeof INITIAL_EVENTS[0] | null>(null);
+
   // Forms
   const [retreatForm, setRetreatForm] = useState({ title: '', location: '', dates: '', price: '', spotsTotal: '', category: 'Yoga', description: '', includes: '' });
   const [eventForm, setEventForm] = useState({ title: '', location: '', date: '', tickets: '', price: '', description: '' });
@@ -91,35 +149,103 @@ const OrganizerDashboard = () => {
   if (!user) { navigate('/login', { replace: true }); return null; }
   const handleLogout = () => { logout(); toast.success('See you soon! Namaste 🙏'); navigate('/'); };
 
-  const handleAddRetreat = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!retreatForm.title || !retreatForm.location || !retreatForm.price) { toast.error('Please fill all required fields'); return; }
-    const newRetreat = {
-      id: retreats.length + 1,
-      title: retreatForm.title, location: retreatForm.location, dates: retreatForm.dates,
-      price: Number(retreatForm.price), spotsTotal: Number(retreatForm.spotsTotal) || 20, spotsFilled: 0,
-      status: 'open' as const, rating: 0, category: retreatForm.category,
-      description: retreatForm.description, includes: retreatForm.includes,
-    };
-    setRetreats(prev => [...prev, newRetreat]);
-    setNewRetreatOpen(false);
-    setRetreatForm({ title: '', location: '', dates: '', price: '', spotsTotal: '', category: 'Yoga', description: '', includes: '' });
-    toast.success(`Retreat "${newRetreat.title}" created!`);
+  const openEditRetreat = (r: typeof INITIAL_RETREATS[0]) => {
+    setEditingRetreat(r);
+    setRetreatForm({
+      title: r.title,
+      location: r.location,
+      dates: r.dates,
+      price: String(r.price),
+      spotsTotal: String(r.spotsTotal),
+      category: r.category,
+      description: r.description || '',
+      includes: r.includes || '',
+    });
+    setNewRetreatOpen(true);
   };
 
-  const handleAddEvent = (e: React.FormEvent) => {
+  const closeRetreatModal = () => {
+    setNewRetreatOpen(false);
+    setEditingRetreat(null);
+    setRetreatForm({ title: '', location: '', dates: '', price: '', spotsTotal: '', category: 'Yoga', description: '', includes: '' });
+  };
+
+  const handleSaveRetreat = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!retreatForm.title || !retreatForm.location || !retreatForm.price) { toast.error('Please fill all required fields'); return; }
+    
+    if (editingRetreat) {
+      setRetreats(prev => prev.map(r => r.id === editingRetreat.id ? {
+        ...r,
+        title: retreatForm.title,
+        location: retreatForm.location,
+        dates: retreatForm.dates,
+        price: Number(retreatForm.price),
+        spotsTotal: Number(retreatForm.spotsTotal) || 20,
+        category: retreatForm.category,
+        description: retreatForm.description,
+        includes: retreatForm.includes,
+      } : r));
+      toast.success(`Retreat "${retreatForm.title}" updated successfully!`);
+    } else {
+      const newRetreat = {
+        id: retreats.length > 0 ? Math.max(...retreats.map(r => r.id)) + 1 : 1,
+        title: retreatForm.title, location: retreatForm.location, dates: retreatForm.dates,
+        price: Number(retreatForm.price), spotsTotal: Number(retreatForm.spotsTotal) || 20, spotsFilled: 0,
+        status: 'open' as const, rating: 0, category: retreatForm.category,
+        description: retreatForm.description, includes: retreatForm.includes,
+      };
+      setRetreats(prev => [...prev, newRetreat]);
+      toast.success(`Retreat "${newRetreat.title}" created successfully!`);
+    }
+    closeRetreatModal();
+  };
+
+  const openEditEvent = (evt: typeof INITIAL_EVENTS[0]) => {
+    setEditingEvent(evt);
+    setEventForm({
+      title: evt.title,
+      location: evt.location,
+      date: evt.date,
+      tickets: String(evt.tickets),
+      price: String(evt.price),
+      description: evt.description || '',
+    });
+    setNewEventOpen(true);
+  };
+
+  const closeEventModal = () => {
+    setNewEventOpen(false);
+    setEditingEvent(null);
+    setEventForm({ title: '', location: '', date: '', tickets: '', price: '', description: '' });
+  };
+
+  const handleSaveEvent = (e: React.FormEvent) => {
     e.preventDefault();
     if (!eventForm.title || !eventForm.location || !eventForm.date) { toast.error('Please fill all required fields'); return; }
-    const newEvent = {
-      id: events.length + 1,
-      title: eventForm.title, location: eventForm.location, date: eventForm.date,
-      tickets: Number(eventForm.tickets) || 100, sold: 0,
-      price: Number(eventForm.price) || 0, description: eventForm.description,
-    };
-    setEvents(prev => [...prev, newEvent]);
-    setNewEventOpen(false);
-    setEventForm({ title: '', location: '', date: '', tickets: '', price: '', description: '' });
-    toast.success(`Event "${newEvent.title}" created!`);
+    
+    if (editingEvent) {
+      setEvents(prev => prev.map(evt => evt.id === editingEvent.id ? {
+        ...evt,
+        title: eventForm.title,
+        location: eventForm.location,
+        date: eventForm.date,
+        tickets: Number(eventForm.tickets) || 100,
+        price: Number(eventForm.price) || 0,
+        description: eventForm.description,
+      } : evt));
+      toast.success(`Event "${eventForm.title}" updated successfully!`);
+    } else {
+      const newEvent = {
+        id: events.length > 0 ? Math.max(...events.map(evt => evt.id)) + 1 : 1,
+        title: eventForm.title, location: eventForm.location, date: eventForm.date,
+        tickets: Number(eventForm.tickets) || 100, sold: 0,
+        price: Number(eventForm.price) || 0, description: eventForm.description,
+      };
+      setEvents(prev => [...prev, newEvent]);
+      toast.success(`Event "${newEvent.title}" created successfully!`);
+    }
+    closeEventModal();
   };
 
   const statusColor = (s: string) =>
@@ -178,10 +304,57 @@ const OrganizerDashboard = () => {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <button className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-muted relative">
-              <Bell size={18} />
-              <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-muted relative"
+              >
+                <Bell size={18} />
+                {notifications.some(n => !n.read) && (
+                  <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                )}
+              </button>
+              
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 rounded-2xl border border-border bg-card p-4 shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="flex items-center justify-between border-b border-border pb-2 mb-3">
+                    <h4 className="font-bold text-sm">Notifications</h4>
+                    <button 
+                      onClick={() => {
+                        setNotifications(notifications.map(n => ({ ...n, read: true })));
+                        toast.success('All marked as read');
+                      }}
+                      className="text-xs font-semibold hover:opacity-85"
+                      style={{ color: ACCENT }}
+                    >
+                      Mark all as read
+                    </button>
+                  </div>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {notifications.length > 0 ? (
+                      notifications.map((n) => (
+                        <div 
+                          key={n.id} 
+                          onClick={() => {
+                            setNotifications(notifications.map(item => item.id === n.id ? { ...item, read: true } : item));
+                          }}
+                          className={`p-2.5 rounded-xl text-left transition-colors cursor-pointer ${n.read ? 'bg-background hover:bg-muted/40 border border-transparent' : 'bg-primary/5 hover:bg-primary/10 border border-primary/20 border-l-2 border-l-primary'}`}
+                          style={!n.read ? { borderLeftColor: ACCENT } : {}}
+                        >
+                          <div className="flex justify-between items-start gap-2 mb-0.5">
+                            <h5 className="font-semibold text-xs text-foreground leading-tight">{n.title}</h5>
+                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">{n.time}</span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">{n.desc}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-muted-foreground text-center py-4">No new notifications</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
             <Link to="/profile">
               <img src={user.avatar} alt={user.name} className="w-9 h-9 rounded-full object-cover border-2" style={{ borderColor: ACCENT }} />
             </Link>
@@ -225,9 +398,22 @@ const OrganizerDashboard = () => {
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'} />
-                      <XAxis dataKey="month" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))' }} />
+                      <XAxis dataKey="month" tick={{ fontSize: 11, fill: isDark ? '#a3a3a3' : '#666666' }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11, fill: isDark ? '#a3a3a3' : '#666666' }} axisLine={false} tickLine={false} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: isDark ? 'hsl(var(--card))' : '#ffffff', 
+                          borderColor: isDark ? 'hsl(var(--border))' : '#e2e8f0', 
+                          borderRadius: '12px',
+                        }} 
+                        labelStyle={{
+                          color: isDark ? 'hsl(var(--foreground))' : '#000000',
+                          fontWeight: 'bold',
+                        }}
+                        itemStyle={{
+                          color: ACCENT,
+                        }}
+                      />
                       <Area type="monotone" dataKey="bookings" stroke="hsl(200,60%,55%)" fill="url(#gBook)" strokeWidth={2} />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -332,7 +518,7 @@ const OrganizerDashboard = () => {
                         className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold border border-border hover:bg-muted transition-colors">
                         <Eye size={12} /> View
                       </button>
-                      <button onClick={() => toast.success(`Editing: ${r.title}`)}
+                      <button onClick={() => openEditRetreat(r)}
                         className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold border border-border hover:bg-muted transition-colors">
                         <Edit2 size={12} /> Edit
                       </button>
@@ -357,60 +543,140 @@ const OrganizerDashboard = () => {
           )}
 
           {/* ── Bookings ── */}
-          {activeNav === 'bookings' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold">Bookings Management</h2>
-                  <p className="text-sm text-muted-foreground">View and manage all retreat bookings</p>
+          {activeNav === 'bookings' && (() => {
+            const filteredBookings = bookings.filter(b => {
+              const statusMatch = bookingStatusFilter === 'All' || b.status === bookingStatusFilter;
+              const retreatMatch = bookingRetreatFilter === 'All' || b.retreat.toLowerCase().includes(bookingRetreatFilter.toLowerCase());
+              const searchMatch = bookingSearchQuery.trim() === '' ||
+                b.guest.toLowerCase().includes(bookingSearchQuery.toLowerCase()) ||
+                b.email.toLowerCase().includes(bookingSearchQuery.toLowerCase()) ||
+                b.id.toLowerCase().includes(bookingSearchQuery.toLowerCase());
+              return statusMatch && retreatMatch && searchMatch;
+            });
+            return (
+              <div className="space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-bold">Bookings Management</h2>
+                    <p className="text-sm text-muted-foreground">View and manage all retreat bookings</p>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-3">
+                    {/* Search Filter */}
+                    <div className="relative">
+                      <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        type="text"
+                        placeholder="Search guest or ID..."
+                        value={bookingSearchQuery}
+                        onChange={(e) => setBookingSearchQuery(e.target.value)}
+                        className="bg-muted border border-border rounded-lg pl-8 pr-3 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary w-40 sm:w-48"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Status:</span>
+                      <select
+                        value={bookingStatusFilter}
+                        onChange={(e) => setBookingStatusFilter(e.target.value)}
+                        className="bg-muted border border-border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                      >
+                        <option value="All">All Statuses</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="pending">Pending</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Retreat:</span>
+                      <select
+                        value={bookingRetreatFilter}
+                        onChange={(e) => setBookingRetreatFilter(e.target.value)}
+                        className="bg-muted border border-border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary max-w-[150px]"
+                      >
+                        <option value="All">All Retreats</option>
+                        {Array.from(new Set(bookings.map(b => b.retreat))).map(r => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <button 
+                      onClick={() => {
+                        setBookingStatusFilter('All');
+                        setBookingRetreatFilter('All');
+                        setBookingSearchQuery('');
+                        toast.info('Filters reset to default');
+                      }}
+                      className="px-3 py-1 rounded-lg text-xs font-semibold border border-border hover:bg-muted"
+                    >
+                      Reset
+                    </button>
+                  </div>
                 </div>
-                <button onClick={() => toast.info('Filter applied')} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm border border-border hover:bg-muted transition-colors">
-                  <Filter size={14} /> Filter
-                </button>
+                <div className="card-wellness overflow-x-auto">
+                  {filteredBookings.length > 0 ? (
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4">ID</th>
+                          <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4">Guest</th>
+                          <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4 hidden md:table-cell">Retreat</th>
+                          <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4 hidden sm:table-cell">Date</th>
+                          <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4">Amount</th>
+                          <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4">Status</th>
+                          <th className="text-left text-xs font-medium text-muted-foreground py-3">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredBookings.map((b) => (
+                          <tr key={b.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                            <td className="py-3 pr-4 text-xs text-muted-foreground font-mono">{b.id}</td>
+                            <td className="py-3 pr-4">
+                              <div className="flex items-center gap-2">
+                                <img src={b.avatar} alt={b.guest} className="w-7 h-7 rounded-full" />
+                                <span className="text-sm font-medium">{b.guest}</span>
+                              </div>
+                            </td>
+                            <td className="py-3 pr-4 hidden md:table-cell text-sm text-muted-foreground">{b.retreat}</td>
+                            <td className="py-3 pr-4 hidden sm:table-cell text-sm text-muted-foreground">{b.date}</td>
+                            <td className="py-3 pr-4 text-sm font-semibold">₹{b.amount.toLocaleString()}</td>
+                            <td className="py-3 pr-4">
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor(b.status)}`}>{b.status}</span>
+                            </td>
+                            <td className="py-3">
+                              <button onClick={() => { setSelectedBooking(b); setViewBookingOpen(true); }}
+                                className="flex items-center gap-1 text-xs font-medium hover:underline"
+                                style={{ color: ACCENT }}>
+                                <Eye size={12} /> View
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="text-center py-10">
+                      <Ticket size={32} className="mx-auto mb-2 text-muted-foreground opacity-40" />
+                      <p className="text-sm text-muted-foreground">No bookings match the selected filters.</p>
+                      <button 
+                        onClick={() => {
+                          setBookingStatusFilter('All');
+                          setBookingRetreatFilter('All');
+                          setBookingSearchQuery('');
+                        }}
+                        className="mt-3 text-xs font-medium hover:underline" 
+                        style={{ color: ACCENT }}
+                      >
+                        Reset filters
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="card-wellness overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4">ID</th>
-                      <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4">Guest</th>
-                      <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4 hidden md:table-cell">Retreat</th>
-                      <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4 hidden sm:table-cell">Date</th>
-                      <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4">Amount</th>
-                      <th className="text-left text-xs font-medium text-muted-foreground py-3 pr-4">Status</th>
-                      <th className="text-left text-xs font-medium text-muted-foreground py-3">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bookings.map((b) => (
-                      <tr key={b.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                        <td className="py-3 pr-4 text-xs text-muted-foreground font-mono">{b.id}</td>
-                        <td className="py-3 pr-4">
-                          <div className="flex items-center gap-2">
-                            <img src={b.avatar} alt={b.guest} className="w-7 h-7 rounded-full" />
-                            <span className="text-sm font-medium">{b.guest}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 pr-4 hidden md:table-cell text-sm text-muted-foreground">{b.retreat}</td>
-                        <td className="py-3 pr-4 hidden sm:table-cell text-sm text-muted-foreground">{b.date}</td>
-                        <td className="py-3 pr-4 text-sm font-semibold">₹{b.amount.toLocaleString()}</td>
-                        <td className="py-3 pr-4">
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor(b.status)}`}>{b.status}</span>
-                        </td>
-                        <td className="py-3">
-                          <button onClick={() => { setSelectedBooking(b); setViewBookingOpen(true); }}
-                            className="flex items-center gap-1 text-xs font-medium hover:underline"
-                            style={{ color: ACCENT }}>
-                            <Eye size={12} /> View
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* ── Events ── */}
           {activeNav === 'events' && (
@@ -455,7 +721,7 @@ const OrganizerDashboard = () => {
                         className="flex-1 py-2 rounded-xl text-xs font-semibold border border-border hover:bg-muted transition-colors flex items-center justify-center gap-1">
                         <Eye size={11} /> View
                       </button>
-                      <button onClick={() => toast.success(`Editing: ${evt.title}`)}
+                      <button onClick={() => openEditEvent(evt)}
                         className="flex-1 py-2 rounded-xl text-xs font-semibold border border-border hover:bg-muted transition-colors flex items-center justify-center gap-1">
                         <Edit2 size={11} /> Edit
                       </button>
@@ -492,9 +758,23 @@ const OrganizerDashboard = () => {
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={bookingData} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'} />
-                      <XAxis dataKey="month" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 100000).toFixed(1)}L`} />
-                      <Tooltip formatter={(v: number) => [`₹${v.toLocaleString()}`, 'Revenue']} contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))' }} />
+                      <XAxis dataKey="month" tick={{ fontSize: 11, fill: isDark ? '#a3a3a3' : '#666666' }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11, fill: isDark ? '#a3a3a3' : '#666666' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 100000).toFixed(1)}L`} />
+                      <Tooltip 
+                        formatter={(v: number) => [`₹${v.toLocaleString()}`, 'Revenue']} 
+                        contentStyle={{ 
+                          backgroundColor: isDark ? 'hsl(var(--card))' : '#ffffff', 
+                          borderColor: isDark ? 'hsl(var(--border))' : '#e2e8f0', 
+                          borderRadius: '12px',
+                        }} 
+                        labelStyle={{
+                          color: isDark ? 'hsl(var(--foreground))' : '#000000',
+                          fontWeight: 'bold',
+                        }}
+                        itemStyle={{
+                          color: ACCENT,
+                        }}
+                      />
                       <Bar dataKey="revenue" name="Revenue" fill="hsl(200,60%,55%)" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -528,8 +808,8 @@ const OrganizerDashboard = () => {
       </div>
 
       {/* ── Modal: New Retreat ── */}
-      <Modal open={newRetreatOpen} onClose={() => setNewRetreatOpen(false)} title="Create New Retreat" subtitle="Publish a wellness retreat or immersive program" accentColor={ACCENT} size="lg">
-        <form onSubmit={handleAddRetreat} className="space-y-4">
+      <Modal open={newRetreatOpen} onClose={closeRetreatModal} title={editingRetreat ? "Edit Retreat" : "Create New Retreat"} subtitle={editingRetreat ? "Modify retreat details" : "Publish a wellness retreat or immersive program"} accentColor={ACCENT} size="lg">
+        <form onSubmit={handleSaveRetreat} className="space-y-4">
           <FormField label="Retreat Title" required>
             <input value={retreatForm.title} onChange={e => setRetreatForm(p => ({ ...p, title: e.target.value }))}
               placeholder="e.g. 7-Day Himalayan Yoga Retreat" className={inputClass} />
@@ -568,17 +848,17 @@ const OrganizerDashboard = () => {
               placeholder="Describe the retreat experience, highlights, and what participants will gain..." rows={3} className={textareaClass} />
           </FormField>
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={() => setNewRetreatOpen(false)}
+            <button type="button" onClick={closeRetreatModal}
               className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-border hover:bg-muted transition-colors">Cancel</button>
             <button type="submit" className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
-              style={{ background: ACCENT }}>Create Retreat</button>
+              style={{ background: ACCENT }}>{editingRetreat ? "Save Changes" : "Create Retreat"}</button>
           </div>
         </form>
       </Modal>
 
       {/* ── Modal: New Event ── */}
-      <Modal open={newEventOpen} onClose={() => setNewEventOpen(false)} title="Create New Event" subtitle="Host a festival, workshop, or wellness webinar" accentColor={ACCENT}>
-        <form onSubmit={handleAddEvent} className="space-y-4">
+      <Modal open={newEventOpen} onClose={closeEventModal} title={editingEvent ? "Edit Event" : "Create New Event"} subtitle={editingEvent ? "Modify event details" : "Host a festival, workshop, or wellness webinar"} accentColor={ACCENT}>
+        <form onSubmit={handleSaveEvent} className="space-y-4">
           <FormField label="Event Title" required>
             <input value={eventForm.title} onChange={e => setEventForm(p => ({ ...p, title: e.target.value }))}
               placeholder="e.g. Wellness Summit 2026" className={inputClass} />
@@ -607,10 +887,10 @@ const OrganizerDashboard = () => {
               placeholder="What will attendees experience at this event?" rows={3} className={textareaClass} />
           </FormField>
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={() => setNewEventOpen(false)}
+            <button type="button" onClick={closeEventModal}
               className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-border hover:bg-muted transition-colors">Cancel</button>
             <button type="submit" className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
-              style={{ background: ACCENT }}>Create Event</button>
+              style={{ background: ACCENT }}>{editingEvent ? "Save Changes" : "Create Event"}</button>
           </div>
         </form>
       </Modal>
@@ -664,7 +944,7 @@ const OrganizerDashboard = () => {
               </div>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => { toast.success(`Editing: ${selectedRetreat.title}`); setViewRetreatOpen(false); }}
+              <button onClick={() => { openEditRetreat(selectedRetreat); setViewRetreatOpen(false); }}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-border hover:bg-muted transition-colors flex items-center justify-center gap-2">
                 <Edit2 size={14} /> Edit Retreat
               </button>
@@ -720,14 +1000,22 @@ const OrganizerDashboard = () => {
               </div>
             )}
             <div className="flex gap-3">
-              <button onClick={() => { toast.success(`Refund initiated for ${selectedBooking.guest}`); setViewBookingOpen(false); }}
+              <button onClick={() => {
+                setBookings(prev => prev.map(b => b.id === selectedBooking.id ? { ...b, status: 'cancelled' } : b));
+                setSelectedBooking(prev => prev ? { ...prev, status: 'cancelled' } : null);
+                toast.success(`Refund processed & booking cancelled for ${selectedBooking.guest}`);
+              }}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-border hover:bg-muted transition-colors">
-                Process Refund
+                Cancel & Refund
               </button>
-              <button onClick={() => { toast.success(`Confirmation sent to ${selectedBooking.guest}`); setViewBookingOpen(false); }}
+              <button onClick={() => {
+                setBookings(prev => prev.map(b => b.id === selectedBooking.id ? { ...b, status: 'confirmed' } : b));
+                setSelectedBooking(prev => prev ? { ...prev, status: 'confirmed' } : null);
+                toast.success(`Booking confirmed & email sent to ${selectedBooking.guest}! 📩`);
+              }}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2"
                 style={{ background: ACCENT }}>
-                <Mail size={14} /> Send Confirmation
+                <Mail size={14} /> Confirm Booking
               </button>
             </div>
           </div>
@@ -777,7 +1065,7 @@ const OrganizerDashboard = () => {
               </div>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => { toast.success(`Editing: ${selectedEvent.title}`); setViewEventOpen(false); }}
+              <button onClick={() => { openEditEvent(selectedEvent); setViewEventOpen(false); }}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-border hover:bg-muted transition-colors flex items-center justify-center gap-2">
                 <Edit2 size={14} /> Edit Event
               </button>
