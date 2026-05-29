@@ -26,6 +26,7 @@ import FAQ from './pages/FAQ';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import Instructors from './pages/Instructors';
+import ApplyInstructor from './pages/ApplyInstructor';
 import Retreats from './pages/Retreats';
 import NotFound from './pages/NotFound';
 
@@ -68,6 +69,7 @@ const App = () => (
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/instructors" element={<Instructors />} />
+          <Route path="/apply-instructor" element={<ApplyInstructor />} />
           <Route path="/retreats" element={<Retreats />} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
