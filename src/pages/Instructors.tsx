@@ -4,16 +4,19 @@ import { Footer } from '@/components/layout/Footer';
 import { ScrollToTop } from '@/components/layout/ScrollToTop';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { useTheme } from '@/hooks/useTheme';
-import { Star, CheckCircle, Search, Filter, ArrowRight, SlidersHorizontal } from 'lucide-react';
+import { Star, CheckCircle, Search, Filter, ArrowRight, SlidersHorizontal, Calendar, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { INSTRUCTORS } from '@/constants';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { Modal, FormField, inputClass, selectClass, textareaClass } from '@/components/features/Modal';
 
 const SPECIALTIES = ['All', 'Hatha Yoga', 'Vinyasa', 'Ashtanga', 'Yin Yoga', 'Kundalini', 'Meditation', 'Sound Healing'];
 
 const Instructors = () => {
   useScrollTop();
   const { isDark } = useTheme();
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [specialty, setSpecialty] = useState('All');
   
@@ -23,6 +26,113 @@ const Instructors = () => {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [priceMax, setPriceMax] = useState(120);
   const [experienceMin, setExperienceMin] = useState(0);
+
+  // Booking states
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [selectedInstructor, setSelectedInstructor] = useState<typeof INSTRUCTORS[0] | null>(null);
+  
+  const [bookingForm, setBookingForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    date: '',
+    timeSlot: '09:00 AM',
+    duration: 1, // hours
+    focus: '',
+    notes: '',
+  });
+
+  const handleOpenBooking = (instructor: typeof INSTRUCTORS[0]) => {
+    setSelectedInstructor(instructor);
+    setBookingForm({
+      name: user ? user.name : '',
+      email: user ? user.email : '',
+      phone: '',
+      date: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow
+      timeSlot: '09:00 AM',
+      duration: 1,
+      focus: instructor.specialty[0] || 'Hatha Yoga',
+      notes: '',
+    });
+    setBookingModalOpen(true);
+  };
+
+  const handleConfirmBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bookingForm.name || !bookingForm.email || !bookingForm.phone || !bookingForm.date) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const bookingId = `BK-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    // Sync session to the Instructor dashboard if it matches their profile
+    const storedSessionsRaw = localStorage.getItem('instructor_sessions');
+    let sessionsList = [];
+    if (storedSessionsRaw) {
+      try { sessionsList = JSON.parse(storedSessionsRaw); } catch { sessionsList = []; }
+    } else {
+      sessionsList = [
+        { id: 1, title: 'Morning Vinyasa Flow', time: 'Today, 7:00 AM', students: 24, platform: 'Live Studio', classId: 1 },
+        { id: 2, title: 'Yoga for Stress Relief', time: 'Today, 6:30 PM', students: 31, platform: 'Recorded', classId: 4 },
+        { id: 3, title: 'Yin Yoga for Recovery', time: 'Tomorrow, 7:00 PM', students: 18, platform: 'Live Studio', classId: 2 },
+      ];
+    }
+
+    const sessionDate = new Date(bookingForm.date);
+    const formattedDate = sessionDate.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+
+    const newSession = {
+      id: sessionsList.length > 0 ? Math.max(...sessionsList.map((s: any) => s.id)) + 1 : 1,
+      title: `1-on-1: ${bookingForm.focus} with ${bookingForm.name}`,
+      time: `${formattedDate}, ${bookingForm.timeSlot} (${bookingForm.duration} hr)`,
+      students: 1,
+      platform: 'Private Live Studio',
+      classId: 99
+    };
+
+    sessionsList = [newSession, ...sessionsList];
+    localStorage.setItem('instructor_sessions', JSON.stringify(sessionsList));
+
+    // Send push notification to instructor dashboard
+    const storedNotifsRaw = localStorage.getItem('instructor_notifications');
+    let instructorNotifs = [];
+    if (storedNotifsRaw) {
+      try { instructorNotifs = JSON.parse(storedNotifsRaw); } catch { instructorNotifs = []; }
+    }
+    const newNotif = {
+      id: Date.now(),
+      title: 'New Private Session Booked! 🧘',
+      desc: `${bookingForm.name} booked a 1-on-1 ${bookingForm.focus} session on ${formattedDate} at ${bookingForm.timeSlot}.`,
+      time: 'Just now',
+      read: false
+    };
+    instructorNotifs = [newNotif, ...instructorNotifs];
+    localStorage.setItem('instructor_notifications', JSON.stringify(instructorNotifs));
+
+    // Store in user bookings history
+    const storedUserBookingsRaw = localStorage.getItem('user_instructor_bookings');
+    let userBookings = [];
+    if (storedUserBookingsRaw) {
+      try { userBookings = JSON.parse(storedUserBookingsRaw); } catch { userBookings = []; }
+    }
+    const userBookingEntry = {
+      id: bookingId,
+      instructorName: selectedInstructor?.name,
+      instructorAvatar: selectedInstructor?.avatar,
+      price: selectedInstructor ? selectedInstructor.price * bookingForm.duration : 0,
+      date: formattedDate,
+      time: bookingForm.timeSlot,
+      duration: bookingForm.duration,
+      focus: bookingForm.focus,
+      status: 'confirmed'
+    };
+    userBookings = [userBookingEntry, ...userBookings];
+    localStorage.setItem('user_instructor_bookings', JSON.stringify(userBookings));
+
+    setBookingModalOpen(false);
+    toast.success(`Private session booked successfully with ${selectedInstructor?.name}!`);
+  };
 
   const filteredAndSorted = INSTRUCTORS.filter((ins) => {
     // 1. Specialty Match
@@ -233,7 +343,7 @@ const Instructors = () => {
                     <span>{ins.experience} exp.</span>
                     <span className="font-semibold text-foreground">${ins.price}/hr</span>
                   </div>
-                  <button onClick={() => toast.success(`Booking request sent to ${ins.name}!`)}
+                  <button onClick={() => handleOpenBooking(ins)}
                     className="w-full py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
                     style={{ background: 'hsl(133 18% 59%)' }}>
                     Book Session
@@ -264,6 +374,156 @@ const Instructors = () => {
       </main>
       <Footer />
       <ScrollToTop />
+
+      {/* Instructor Private Session Booking Modal */}
+      <Modal 
+        open={bookingModalOpen} 
+        onClose={() => setBookingModalOpen(false)} 
+        title="Book 1-on-1 Private Session" 
+        subtitle={selectedInstructor ? `with ${selectedInstructor.name}` : ''}
+        accentColor="hsl(133 18% 59%)"
+      >
+        {selectedInstructor && (
+          <form onSubmit={handleConfirmBooking} className="space-y-4">
+            <div className="p-4 rounded-xl bg-muted/40 flex justify-between items-center mb-4">
+              <div className="flex items-center gap-3">
+                <img src={selectedInstructor.avatar} alt={selectedInstructor.name} className="w-12 h-12 rounded-full object-cover border-2" style={{ borderColor: 'hsl(133 18% 59%)' }} />
+                <div>
+                  <span className="text-xs text-muted-foreground block">Hourly Session Rate</span>
+                  <span className="text-base font-bold" style={{ color: 'hsl(133 20% 40%)' }}>
+                    ${selectedInstructor.price} <span className="text-xs text-muted-foreground font-normal">/ hour</span>
+                  </span>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="text-xs text-muted-foreground block">Specialization</span>
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: 'hsl(220 70% 95%)', color: 'hsl(220 70% 40%)' }}>
+                  {selectedInstructor.specialty[0]}
+                </span>
+              </div>
+            </div>
+
+            <FormField label="Full Name" required>
+              <input 
+                type="text" 
+                value={bookingForm.name} 
+                onChange={e => setBookingForm(p => ({ ...p, name: e.target.value }))}
+                placeholder="e.g. Meera Singh" 
+                className={inputClass}
+                required
+              />
+            </FormField>
+
+            <FormField label="Email Address" required>
+              <input 
+                type="email" 
+                value={bookingForm.email} 
+                onChange={e => setBookingForm(p => ({ ...p, email: e.target.value }))}
+                placeholder="meera@example.com" 
+                className={inputClass}
+                required
+              />
+            </FormField>
+
+            <FormField label="Phone Number" required>
+              <input 
+                type="tel" 
+                value={bookingForm.phone} 
+                onChange={e => setBookingForm(p => ({ ...p, phone: e.target.value }))}
+                placeholder="+91 98765 43210" 
+                className={inputClass}
+                required
+              />
+            </FormField>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField label="Session Date" required>
+                <input 
+                  type="date" 
+                  value={bookingForm.date} 
+                  onChange={e => setBookingForm(p => ({ ...p, date: e.target.value }))}
+                  className={inputClass}
+                  required
+                />
+              </FormField>
+
+              <FormField label="Time Slot" required>
+                <select 
+                  value={bookingForm.timeSlot} 
+                  onChange={e => setBookingForm(p => ({ ...p, timeSlot: e.target.value }))}
+                  className={selectClass}
+                  required
+                >
+                  {['07:00 AM', '09:00 AM', '11:00 AM', '01:00 PM', '03:00 PM', '05:00 PM', '07:00 PM'].map(slot => (
+                    <option key={slot} value={slot}>{slot}</option>
+                  ))}
+                </select>
+              </FormField>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField label="Duration" required>
+                <select 
+                  value={bookingForm.duration} 
+                  onChange={e => setBookingForm(p => ({ ...p, duration: Number(e.target.value) }))}
+                  className={selectClass}
+                >
+                  {[1, 1.5, 2].map(n => (
+                    <option key={n} value={n}>{n} {n === 1 ? 'Hour' : 'Hours'}</option>
+                  ))}
+                </select>
+              </FormField>
+
+              <FormField label="Session Focus" required>
+                <select 
+                  value={bookingForm.focus} 
+                  onChange={e => setBookingForm(p => ({ ...p, focus: e.target.value }))}
+                  className={selectClass}
+                >
+                  {selectedInstructor.specialty.map(spec => (
+                    <option key={spec} value={spec}>{spec}</option>
+                  ))}
+                </select>
+              </FormField>
+            </div>
+
+            <FormField label="Health Notes / Focus Goals">
+              <textarea 
+                value={bookingForm.notes} 
+                onChange={e => setBookingForm(p => ({ ...p, notes: e.target.value }))}
+                placeholder="Describe any injuries, current level of practice, or specific session goals..." 
+                rows={3} 
+                className={textareaClass}
+              />
+            </FormField>
+
+            <div className="pt-4 flex justify-between items-center border-t border-border mt-6">
+              <div>
+                <span className="text-xs text-muted-foreground block">Total Pricing</span>
+                <span className="text-2xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'hsl(133 20% 40%)' }}>
+                  ${(selectedInstructor.price * bookingForm.duration).toLocaleString()}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  type="button" 
+                  onClick={() => setBookingModalOpen(false)}
+                  className="py-2.5 px-4 rounded-xl text-sm font-semibold border border-border hover:bg-muted transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="py-2.5 px-6 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                  style={{ background: 'hsl(133 18% 59%)' }}
+                >
+                  Confirm Booking
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
+      </Modal>
     </div>
   );
 };
