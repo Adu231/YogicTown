@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Leaf, Home, Users, BookOpen, BarChart3, Settings, LogOut,
@@ -37,18 +37,18 @@ const subData = [
 ];
 
 const INITIAL_USERS = [
-  { id: 1, name: 'Meera Singh', email: 'meera@ex.com', phone: '+91 98765 43210', role: 'user', plan: 'Premium', joined: 'May 10', status: 'active', location: 'Bangalore', bio: 'Yoga practitioner for 3 years. Loves Vinyasa and morning meditation.', sessions: 42, avatar: '[ui-avatars.com](https://ui-avatars.com/api/?name=Meera+Singh&background=84A98C&color=fff)' },
-  { id: 2, name: 'Ananya Krishnan', email: 'instructor@example.com', phone: '+91 87654 32109', role: 'instructor', plan: 'Elite', joined: 'Jun 10, 24', status: 'verified', location: 'Mumbai', bio: 'Certified RYT-500 with 8 years experience.', sessions: 312, avatar: '[ui-avatars.com](https://ui-avatars.com/api/?name=Ananya+K&background=F4A261&color=fff)' },
-  { id: 3, name: 'Rishikesh Wellness', email: 'organizer@example.com', phone: '+91 76543 21098', role: 'organizer', plan: 'Elite', joined: 'Mar 22, 24', status: 'active', location: 'Rishikesh', bio: 'Premier yoga retreat center in the Himalayas.', sessions: 0, avatar: '[ui-avatars.com](https://ui-avatars.com/api/?name=RW+Center&background=5B8FB9&color=fff)' },
-  { id: 4, name: 'Rahul Verma', email: 'rahul@ex.com', phone: '+91 65432 10987', role: 'user', plan: 'Free', joined: 'May 28', status: 'active', location: 'Delhi', bio: 'Beginner looking to reduce stress through yoga.', sessions: 8, avatar: '[ui-avatars.com](https://ui-avatars.com/api/?name=Rahul+V&background=A98B84&color=fff)' },
-  { id: 5, name: 'Dr. Priya Nair', email: 'coach@example.com', phone: '+91 54321 09876', role: 'coach', plan: 'Elite', joined: 'Sep 5, 24', status: 'verified', location: 'Pune', bio: 'Ayurvedic nutritionist with 10+ years experience.', sessions: 187, avatar: '[ui-avatars.com](https://ui-avatars.com/api/?name=Dr+Priya&background=84A98C&color=fff)' },
-  { id: 6, name: 'Kiran Shah', email: 'kiran@ex.com', phone: '+91 43210 98765', role: 'user', plan: 'Basic', joined: 'Jun 5', status: 'suspended', location: 'Ahmedabad', bio: 'Intermediate practitioner focusing on flexibility.', sessions: 15, avatar: '[ui-avatars.com](https://ui-avatars.com/api/?name=Kiran+S&background=D97B7B&color=fff)' },
+  { id: 1, name: 'Meera Singh', email: 'meera@ex.com', phone: '+91 98765 43210', role: 'user', plan: 'Premium', joined: 'May 10', status: 'active', location: 'Bangalore', bio: 'Yoga practitioner for 3 years. Loves Vinyasa and morning meditation.', sessions: 42, avatar: 'https://ui-avatars.com/api/?name=Meera+Singh&background=84A98C&color=fff' },
+  { id: 2, name: 'Ananya Krishnan', email: 'instructor@example.com', phone: '+91 87654 32109', role: 'instructor', plan: 'Elite', joined: 'Jun 10, 24', status: 'verified', location: 'Mumbai', bio: 'Certified RYT-500 with 8 years experience.', sessions: 312, avatar: 'https://ui-avatars.com/api/?name=Ananya+K&background=F4A261&color=fff' },
+  { id: 3, name: 'Rishikesh Wellness', email: 'organizer@example.com', phone: '+91 76543 21098', role: 'organizer', plan: 'Elite', joined: 'Mar 22, 24', status: 'active', location: 'Rishikesh', bio: 'Premier yoga retreat center in the Himalayas.', sessions: 0, avatar: 'https://ui-avatars.com/api/?name=RW+Center&background=5B8FB9&color=fff' },
+  { id: 4, name: 'Rahul Verma', email: 'rahul@ex.com', phone: '+91 65432 10987', role: 'user', plan: 'Free', joined: 'May 28', status: 'active', location: 'Delhi', bio: 'Beginner looking to reduce stress through yoga.', sessions: 8, avatar: 'https://ui-avatars.com/api/?name=Rahul+V&background=A98B84&color=fff' },
+  { id: 5, name: 'Dr. Priya Nair', email: 'coach@example.com', phone: '+91 54321 09876', role: 'coach', plan: 'Elite', joined: 'Sep 5, 24', status: 'verified', location: 'Pune', bio: 'Ayurvedic nutritionist with 10+ years experience.', sessions: 187, avatar: 'https://ui-avatars.com/api/?name=Dr+Priya&background=84A98C&color=fff' },
+  { id: 6, name: 'Kiran Shah', email: 'kiran@ex.com', phone: '+91 43210 98765', role: 'user', plan: 'Basic', joined: 'Jun 5', status: 'suspended', location: 'Ahmedabad', bio: 'Intermediate practitioner focusing on flexibility.', sessions: 15, avatar: 'https://ui-avatars.com/api/?name=Kiran+S&background=D97B7B&color=fff' },
 ];
 
 const PENDING_VERIFICATIONS = [
-  { name: 'Yogi Arun Kumar', type: 'Instructor', cert: 'RYT-200', submitted: '2 days ago', specialization: 'Kundalini Yoga', experience: '5 years', avatar: '[ui-avatars.com](https://ui-avatars.com/api/?name=Yogi+Arun&background=84A98C&color=fff)' },
-  { name: 'Serene Wellness Spa', type: 'Organizer', cert: 'Business Registration', submitted: '5 days ago', specialization: 'Ayurvedic Retreats', experience: '3 years', avatar: '[ui-avatars.com](https://ui-avatars.com/api/?name=Serene+W&background=5B8FB9&color=fff)' },
-  { name: 'Nisha Mehta', type: 'Coach', cert: 'Nutrition Diploma', submitted: '1 day ago', specialization: 'Sports Nutrition', experience: '7 years', avatar: '[ui-avatars.com](https://ui-avatars.com/api/?name=Nisha+M&background=F4A261&color=fff)' },
+  { name: 'Yogi Arun Kumar', type: 'Instructor', cert: 'RYT-200', submitted: '2 days ago', specialization: 'Kundalini Yoga', experience: '5 years', avatar: 'https://ui-avatars.com/api/?name=Yogi+Arun&background=84A98C&color=fff' },
+  { name: 'Serene Wellness Spa', type: 'Organizer', cert: 'Business Registration', submitted: '5 days ago', specialization: 'Ayurvedic Retreats', experience: '3 years', avatar: 'https://ui-avatars.com/api/?name=Serene+W&background=5B8FB9&color=fff' },
+  { name: 'Nisha Mehta', type: 'Coach', cert: 'Nutrition Diploma', submitted: '1 day ago', specialization: 'Sports Nutrition', experience: '7 years', avatar: 'https://ui-avatars.com/api/?name=Nisha+M&background=F4A261&color=fff' },
 ];
 
 const FLAGGED_CONTENT = [
@@ -78,9 +78,45 @@ const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeNav, setActiveNav] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
-  const [userList, setUserList] = useState(INITIAL_USERS);
-  const [pendingList, setPendingList] = useState(PENDING_VERIFICATIONS);
-  const [flaggedList, setFlaggedList] = useState(FLAGGED_CONTENT);
+
+  const [userList, setUserList] = useState(() => {
+    const stored = localStorage.getItem('admin_users');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return INITIAL_USERS; }
+    }
+    return INITIAL_USERS;
+  });
+
+  const [pendingList, setPendingList] = useState(() => {
+    const stored = localStorage.getItem('admin_pending_verifications');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return PENDING_VERIFICATIONS; }
+    }
+    return PENDING_VERIFICATIONS;
+  });
+
+  const [flaggedList, setFlaggedList] = useState(() => {
+    const stored = localStorage.getItem('admin_flagged_content');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return FLAGGED_CONTENT; }
+    }
+    return FLAGGED_CONTENT;
+  });
+
+  const [notifications, setNotifications] = useState(() => {
+    const stored = localStorage.getItem('admin_notifications');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return []; }
+    }
+    return [
+      { id: 1, title: 'New Verification Request 👤', desc: 'Yogi Arun Kumar submitted certification documents.', time: '2 hours ago', read: false },
+      { id: 2, title: 'Flagged Content Report 🚩', desc: 'Meera S. reported a spam comment in the Beginner Yogis group.', time: '5 hours ago', read: false },
+      { id: 3, title: 'System Security Update 🔒', desc: 'Automatic system security protocols completed successfully.', time: '1 day ago', read: true },
+    ];
+  });
+
+  const [userSortBy, setUserSortBy] = useState('name-asc');
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
 
   // Modal states
   const [newUserOpen, setNewUserOpen] = useState(false);
@@ -94,14 +130,21 @@ const AdminDashboard = () => {
   const [newUserForm, setNewUserForm] = useState({ name: '', email: '', phone: '', role: 'user', plan: 'Free', location: '', bio: '', password: '' });
   const [editUserForm, setEditUserForm] = useState({ name: '', email: '', phone: '', role: 'user', plan: 'Free', location: '', bio: '' });
 
+  // Persistence effects
+  useEffect(() => { localStorage.setItem('admin_users', JSON.stringify(userList)); }, [userList]);
+  useEffect(() => { localStorage.setItem('admin_pending_verifications', JSON.stringify(pendingList)); }, [pendingList]);
+  useEffect(() => { localStorage.setItem('admin_flagged_content', JSON.stringify(flaggedList)); }, [flaggedList]);
+  useEffect(() => { localStorage.setItem('admin_notifications', JSON.stringify(notifications)); }, [notifications]);
+
   if (!user) { navigate('/login', { replace: true }); return null; }
   const handleLogout = () => { logout(); toast.success('See you soon!'); navigate('/'); };
 
   const handleAddUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUserForm.name || !newUserForm.email || !newUserForm.password) { toast.error('Please fill all required fields'); return; }
+    const nextId = userList.length > 0 ? Math.max(...userList.map(u => u.id)) + 1 : 1;
     const newUser = {
-      id: userList.length + 1,
+      id: nextId,
       name: newUserForm.name,
       email: newUserForm.email,
       phone: newUserForm.phone,
@@ -112,7 +155,7 @@ const AdminDashboard = () => {
       location: newUserForm.location,
       bio: newUserForm.bio,
       sessions: 0,
-      avatar: `[ui-avatars.com](https://ui-avatars.com/api/?name=${encodeURIComponent(newUserForm.name)}&background=84A98C&color=fff)`,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(newUserForm.name)}&background=84A98C&color=fff`,
     };
     setUserList(prev => [newUser, ...prev]);
     setNewUserOpen(false);
@@ -132,7 +175,7 @@ const AdminDashboard = () => {
       plan: editUserForm.plan,
       location: editUserForm.location,
       bio: editUserForm.bio,
-      avatar: `[ui-avatars.com](https://ui-avatars.com/api/?name=${encodeURIComponent(editUserForm.name)}&background=84A98C&color=fff)`,
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(editUserForm.name)}&background=84A98C&color=fff`,
     };
     setUserList(prev => prev.map(u => u.id === selectedUser.id ? updatedUser : u));
     setEditUserOpen(false);
@@ -156,7 +199,21 @@ const AdminDashboard = () => {
   const filteredUsers = userList.filter(u =>
     u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ).sort((a, b) => {
+    if (userSortBy === 'name-asc') {
+      return a.name.localeCompare(b.name);
+    }
+    if (userSortBy === 'name-desc') {
+      return b.name.localeCompare(a.name);
+    }
+    if (userSortBy === 'joined-new') {
+      return b.id - a.id;
+    }
+    if (userSortBy === 'role') {
+      return a.role.localeCompare(b.role);
+    }
+    return 0;
+  });
 
   const suspendUser = (id: number) => {
     setUserList(prev => prev.map(u => u.id === id ? { ...u, status: u.status === 'suspended' ? 'active' : 'suspended' } : u));
@@ -168,10 +225,6 @@ const AdminDashboard = () => {
     toast.success(`${name} verified successfully!`);
   };
 
-  const resolveFlag = (content: string) => {
-    setFlaggedList(prev => prev.filter(f => f.content !== content));
-    toast.success('Content removed and user warned');
-  };
 
   const statusColor = (s: string) =>
     s === 'active' ? 'bg-green-100 text-green-700' :
@@ -186,26 +239,35 @@ const AdminDashboard = () => {
     r === 'admin' ? 'bg-purple-100 text-purple-700' :
     'bg-muted text-muted-foreground';
 
-  // Function to test all buttons are functional
-  const testButtonFunctionality = () => {
-    const testButtons = [
-      { name: 'View User Details', action: () => toast.info('View button clickable') },
-      { name: 'Suspend/Unsuspend', action: () => toast.info('Suspend button clickable') },
-      { name: 'Edit User', action: () => toast.info('Edit button clickable') },
-      { name: 'Delete User', action: () => toast.info('Delete button clickable (demo mode)') },
-      { name: 'Approve Verification', action: () => toast.info('Approve button clickable') },
-      { name: 'Reject Verification', action: () => toast.info('Reject button clickable') },
-      { name: 'View Verification Docs', action: () => toast.info('View docs button clickable') },
-      { name: 'Remove Flagged Content', action: () => toast.info('Remove content button clickable') },
-      { name: 'Warn User', action: () => toast.info('Warn user button clickable') },
-      { name: 'Dismiss Flag', action: () => toast.info('Dismiss button clickable') },
-      { name: 'Add User', action: () => toast.info('Add user button clickable') },
-    ];
-    
-    toast.success(`Testing ${testButtons.length} button functionalities...`);
-    testButtons.forEach((btn, i) => {
-      setTimeout(() => btn.action(), i * 100);
-    });
+  const dismissFlag = (content: string) => {
+    setFlaggedList(prev => prev.filter(f => f.content !== content));
+    toast.success('Flag dismissed');
+  };
+
+  const warnUser = (content: string, reporter: string) => {
+    setFlaggedList(prev => prev.filter(f => f.content !== content));
+    toast.warning('Warning alert dispatched to content creator');
+    const newNotif = {
+      id: Date.now(),
+      title: 'Warning Dispatched ⚠️',
+      desc: `Warning alert dispatched for flagged activity reported by ${reporter}.`,
+      time: 'Just now',
+      read: false
+    };
+    setNotifications(prev => [newNotif, ...prev]);
+  };
+
+  const resolveFlag = (content: string, reporter: string) => {
+    setFlaggedList(prev => prev.filter(f => f.content !== content));
+    toast.success('Content removed and warning dispatched');
+    const newNotif = {
+      id: Date.now(),
+      title: 'Content Moderated 🛑',
+      desc: `Content has been removed in response to standard report by ${reporter}.`,
+      time: 'Just now',
+      read: false
+    };
+    setNotifications(prev => [newNotif, ...prev]);
   };
 
   return (
@@ -263,17 +325,51 @@ const AdminDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button 
-              onClick={testButtonFunctionality}
-              className="px-3 py-1.5 text-xs rounded-lg border border-border hover:bg-muted transition-colors"
-              title="Test All Button Functionality">
-              Test Buttons
-            </button>
             <ThemeToggle />
-            <button className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-muted relative">
-              <Bell size={18} />
-              <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
-            </button>
+            <div className="relative">
+              <button onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
+                className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-muted relative">
+                <Bell size={18} />
+                {notifications.some(n => !n.read) && (
+                  <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
+                )}
+              </button>
+              {notifDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setNotifDropdownOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-xl shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="flex items-center justify-between px-4 py-2 border-b border-border mb-1">
+                      <span className="font-semibold text-sm">Notifications</span>
+                      <button onClick={() => { setNotifications(prev => prev.map(n => ({ ...n, read: true }))); toast.success('All marked as read'); }}
+                        className="text-xs hover:underline font-semibold" style={{ color: ADMIN_COLOR }}>
+                        Mark all read
+                      </button>
+                    </div>
+                    <div className="max-h-64 overflow-y-auto divide-y divide-border/60">
+                      {notifications.length === 0 ? (
+                        <p className="text-center text-xs text-muted-foreground py-6">No new notifications</p>
+                      ) : (
+                        notifications.map(n => (
+                          <div key={n.id} className={`p-3 text-left hover:bg-muted/40 transition-colors ${!n.read ? 'bg-muted/20 font-medium' : ''}`}>
+                            <div className="flex justify-between gap-2 mb-1">
+                              <span className="font-semibold text-xs truncate">{n.title}</span>
+                              <span className="text-[10px] text-muted-foreground shrink-0">{n.time}</span>
+                            </div>
+                            <p className="text-muted-foreground text-[11px] leading-relaxed">{n.desc}</p>
+                            {!n.read && (
+                              <button onClick={() => setNotifications(prev => prev.map(item => item.id === n.id ? { ...item, read: true } : item))}
+                                className="text-[10px] mt-1.5 hover:underline block font-semibold" style={{ color: ADMIN_COLOR }}>
+                                Mark as read
+                              </button>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
             <Link to="/profile">
               <img src={user.avatar} alt={user.name} className="w-9 h-9 rounded-full object-cover border-2" style={{ borderColor: ADMIN_COLOR }} />
             </Link>
@@ -339,7 +435,17 @@ const AdminDashboard = () => {
                       <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'} />
                       <XAxis dataKey="month" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
-                      <Tooltip formatter={(v: number) => [`${v.toLocaleString()}`, 'Users']} contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))' }} />
+                      <Tooltip 
+                        formatter={(v: number) => [`${v.toLocaleString()}`, 'Users']} 
+                        contentStyle={{ 
+                          backgroundColor: isDark ? 'hsl(var(--card))' : '#ffffff', 
+                          borderColor: isDark ? 'hsl(var(--border))' : '#e2e8f0', 
+                          borderRadius: '12px',
+                          color: isDark ? 'hsl(var(--foreground))' : '#000000'
+                        }} 
+                        itemStyle={{ color: isDark ? 'hsl(var(--foreground))' : '#000000' }}
+                        labelStyle={{ color: isDark ? 'hsl(var(--foreground))' : '#000000', fontWeight: 600 }}
+                      />
                       <Area type="monotone" dataKey="users" name="Users" stroke="hsl(220,70%,60%)" fill="url(#gUsers)" strokeWidth={2} />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -351,7 +457,17 @@ const AdminDashboard = () => {
                       <Pie data={subData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} dataKey="value" paddingAngle={3}>
                         {subData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                       </Pie>
-                      <Tooltip formatter={(v: number) => [`${v}%`, '']} contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))' }} />
+                      <Tooltip 
+                        formatter={(v: number) => [`${v}%`, '']} 
+                        contentStyle={{ 
+                          backgroundColor: isDark ? 'hsl(var(--card))' : '#ffffff', 
+                          borderColor: isDark ? 'hsl(var(--border))' : '#e2e8f0', 
+                          borderRadius: '12px',
+                          color: isDark ? 'hsl(var(--foreground))' : '#000000'
+                        }} 
+                        itemStyle={{ color: isDark ? 'hsl(var(--foreground))' : '#000000' }}
+                        labelStyle={{ color: isDark ? 'hsl(var(--foreground))' : '#000000', fontWeight: 600 }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="space-y-1.5">
@@ -378,7 +494,7 @@ const AdminDashboard = () => {
                   <h2 className="text-xl font-bold">User Management</h2>
                   <p className="text-sm text-muted-foreground">Manage all platform users and roles</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center flex-wrap">
                   <div className="relative">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <input
@@ -386,16 +502,21 @@ const AdminDashboard = () => {
                       placeholder="Search users..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9 pr-4 py-2 rounded-xl bg-muted border border-transparent focus:outline-none focus:ring-2 focus:ring-primary text-sm w-48"
+                      className="pl-9 pr-4 py-2 rounded-xl bg-muted border border-transparent focus:outline-none focus:ring-2 focus:ring-primary text-sm w-48 text-foreground"
                     />
                   </div>
-                  <button onClick={() => testButtonFunctionality()}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-border hover:bg-muted transition-colors"
-                    title="Test button functionality">
-                    Test Buttons
-                  </button>
+                  <select
+                    value={userSortBy}
+                    onChange={(e) => setUserSortBy(e.target.value)}
+                    className="px-3 py-2 rounded-xl text-sm border border-border bg-background font-medium focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+                  >
+                    <option value="name-asc">Sort: Name (A-Z)</option>
+                    <option value="name-desc">Sort: Name (Z-A)</option>
+                    <option value="joined-new">Sort: Newest Joined</option>
+                    <option value="role">Sort: Role</option>
+                  </select>
                   <button onClick={() => setNewUserOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
                     style={{ background: ADMIN_COLOR }}>
                     + Add User
                   </button>
@@ -557,11 +678,11 @@ const AdminDashboard = () => {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={() => toast.info('Content reviewed — no action taken')}
+                        <button onClick={() => dismissFlag(f.content)}
                           className="flex-1 py-2 rounded-xl text-xs font-semibold border border-border hover:bg-muted transition-colors">Dismiss</button>
-                        <button onClick={() => toast.info('Warning sent to user')}
+                        <button onClick={() => warnUser(f.content, f.reporter)}
                           className="flex-1 py-2 rounded-xl text-xs font-semibold border border-yellow-300 text-yellow-700 hover:bg-yellow-50 transition-colors">Warn User</button>
-                        <button onClick={() => resolveFlag(f.content)}
+                        <button onClick={() => resolveFlag(f.content, f.reporter)}
                           className="flex-1 py-2 rounded-xl text-xs font-semibold text-white" style={{ background: 'hsl(0 60% 60%)' }}>Remove Content</button>
                       </div>
                     </div>
@@ -599,7 +720,17 @@ const AdminDashboard = () => {
                       <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'} />
                       <XAxis dataKey="month" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 100000).toFixed(1)}L`} />
-                      <Tooltip formatter={(v: number) => [`₹${v.toLocaleString()}`, 'Revenue']} contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))' }} />
+                      <Tooltip 
+                        formatter={(v: number) => [`₹${v.toLocaleString()}`, 'Revenue']} 
+                        contentStyle={{ 
+                          backgroundColor: isDark ? 'hsl(var(--card))' : '#ffffff', 
+                          borderColor: isDark ? 'hsl(var(--border))' : '#e2e8f0', 
+                          borderRadius: '12px',
+                          color: isDark ? 'hsl(var(--foreground))' : '#000000'
+                        }} 
+                        itemStyle={{ color: isDark ? 'hsl(var(--foreground))' : '#000000' }}
+                        labelStyle={{ color: isDark ? 'hsl(var(--foreground))' : '#000000', fontWeight: 600 }}
+                      />
                       <Bar dataKey="revenue" name="Revenue" fill="hsl(220,70%,60%)" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -617,7 +748,16 @@ const AdminDashboard = () => {
                       <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'} />
                       <XAxis dataKey="month" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
-                      <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))' }} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: isDark ? 'hsl(var(--card))' : '#ffffff', 
+                          borderColor: isDark ? 'hsl(var(--border))' : '#e2e8f0', 
+                          borderRadius: '12px',
+                          color: isDark ? 'hsl(var(--foreground))' : '#000000'
+                        }} 
+                        itemStyle={{ color: isDark ? 'hsl(var(--foreground))' : '#000000' }}
+                        labelStyle={{ color: isDark ? 'hsl(var(--foreground))' : '#000000', fontWeight: 600 }}
+                      />
                       <Area type="monotone" dataKey="sessions" name="Sessions" stroke="hsl(133,18%,59%)" fill="url(#gSess)" strokeWidth={2} />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -657,7 +797,17 @@ const AdminDashboard = () => {
                       <Pie data={subData} cx="50%" cy="50%" outerRadius={80} dataKey="value" paddingAngle={4}>
                         {subData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                       </Pie>
-                      <Tooltip formatter={(v: number) => [`${v}%`, '']} contentStyle={{ borderRadius: '12px', border: '1px solid hsl(var(--border))' }} />
+                      <Tooltip 
+                        formatter={(v: number) => [`${v}%`, '']} 
+                        contentStyle={{ 
+                          backgroundColor: isDark ? 'hsl(var(--card))' : '#ffffff', 
+                          borderColor: isDark ? 'hsl(var(--border))' : '#e2e8f0', 
+                          borderRadius: '12px',
+                          color: isDark ? 'hsl(var(--foreground))' : '#000000'
+                        }} 
+                        itemStyle={{ color: isDark ? 'hsl(var(--foreground))' : '#000000' }}
+                        labelStyle={{ color: isDark ? 'hsl(var(--foreground))' : '#000000', fontWeight: 600 }}
+                      />
                       <Legend />
                     </PieChart>
                   </ResponsiveContainer>
