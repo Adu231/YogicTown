@@ -53,9 +53,24 @@ const PENDING_VERIFICATIONS = [
 ];
 
 const FLAGGED_CONTENT = [
-  { content: 'Spam comment in Beginner Yogis group', reporter: 'Meera S.', time: '1h ago', severity: 'low' },
-  { content: 'Misleading retreat pricing claims', reporter: 'Rahul V.', time: '3h ago', severity: 'high' },
-  { content: 'Inappropriate profile photo', reporter: 'System', time: '6h ago', severity: 'medium' },
+  { content: 'Spam comment in Beginner Yogis group offering crypto trading bots', reporter: 'Meera S.', time: '1h ago', severity: 'low' },
+  { content: 'Misleading retreat pricing claims - showing ₹500 instead of ₹50,000 to attract clicks', reporter: 'Rahul V.', time: '3h ago', severity: 'high' },
+  { content: 'Inappropriate profile photo containing offensive graphics', reporter: 'System (AI Shield)', time: '6h ago', severity: 'medium' },
+  { content: 'Abusive language and personal attacks in Advanced Pranayama forum', reporter: 'Ananya K.', time: '12h ago', severity: 'high' },
+  { content: 'Promotional link spam in Kerala Detox retreat chat', reporter: 'Yogi Arun', time: '1d ago', severity: 'low' },
+  { content: 'Copyrighted audio upload in Sound Healing session without owner permission', reporter: 'System (Copyright Filter)', time: '2d ago', severity: 'medium' },
+  { content: 'Disruptive behavior and shouting reported during live Kundalini session', reporter: 'Serene K.', time: '3d ago', severity: 'medium' },
+  { content: 'Suspicious login attempts detected from multiple countries for instructor account', reporter: 'System Security', time: '4d ago', severity: 'high' },
+  { content: 'Unverified medical advice claiming yoga cures stage 4 cancer in group post', reporter: 'Dr. Priya', time: '5d ago', severity: 'medium' },
+  { content: 'Duplicate accounts creation spam from single IP range in short succession', reporter: 'System Security', time: '6d ago', severity: 'low' },
+  { content: 'Off-topic political argument in Rishikesh travel advisory thread', reporter: 'Rahul Verma', time: '1w ago', severity: 'low' },
+  { content: 'Payment fraud alert flagged by gatekeeper integrations (Stripe Shield)', reporter: 'System', time: '1w ago', severity: 'high' },
+  { content: 'Selling unauthorized herbal products claiming weight loss of 10kg in 1 week', reporter: 'Nisha Mehta', time: '1w ago', severity: 'medium' },
+  { content: 'Impersonating a certified coach and sending private solicitations', reporter: 'Kiran Shah', time: '1w ago', severity: 'high' },
+  { content: 'Harassment reported in direct messaging - continuous spamming and offensive remarks', reporter: 'Priya N.', time: '2w ago', severity: 'high' },
+  { content: 'Spamming multiple retreat discussions with affiliate product links', reporter: 'Yogi Arun Kumar', time: '2w ago', severity: 'low' },
+  { content: 'Irrelevant advertisement post for an insurance company in meditation room', reporter: 'System (Ad Detector)', time: '2w ago', severity: 'low' },
+  { content: 'Violent or threatening comments in the Himalayan Retreat general forum', reporter: 'Rahul Verma', time: '3w ago', severity: 'high' },
 ];
 
 const NAV = [
@@ -97,9 +112,15 @@ const AdminDashboard = () => {
   });
 
   const [flaggedList, setFlaggedList] = useState(() => {
-    const stored = localStorage.getItem('admin_flagged_content');
+    const stored = localStorage.getItem('admin_flagged_content_v2');
     if (stored) {
-      try { return JSON.parse(stored); } catch { return FLAGGED_CONTENT; }
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed.length === 0 || parsed.length < 5) {
+          return FLAGGED_CONTENT;
+        }
+        return parsed;
+      } catch { return FLAGGED_CONTENT; }
     }
     return FLAGGED_CONTENT;
   });
@@ -134,7 +155,7 @@ const AdminDashboard = () => {
   // Persistence effects
   useEffect(() => { localStorage.setItem('admin_users', JSON.stringify(userList)); }, [userList]);
   useEffect(() => { localStorage.setItem('admin_pending_verifications', JSON.stringify(pendingList)); }, [pendingList]);
-  useEffect(() => { localStorage.setItem('admin_flagged_content', JSON.stringify(flaggedList)); }, [flaggedList]);
+  useEffect(() => { localStorage.setItem('admin_flagged_content_v2', JSON.stringify(flaggedList)); }, [flaggedList]);
   useEffect(() => { localStorage.setItem('admin_notifications', JSON.stringify(notifications)); }, [notifications]);
 
   if (!user) { navigate('/login', { replace: true }); return null; }
@@ -653,9 +674,20 @@ const AdminDashboard = () => {
           {/* ── Moderation ── */}
           {activeNav === 'moderation' && (
             <div className="space-y-6">
-              <div>
-                <h2 className="text-xl font-bold">Community Moderation</h2>
-                <p className="text-sm text-muted-foreground">Review flagged content and community violations</p>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold">Community Moderation</h2>
+                  <p className="text-sm text-muted-foreground">Review flagged content and community violations</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setFlaggedList(FLAGGED_CONTENT);
+                    toast.success('Mock moderation data re-seeded successfully!');
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90 bg-amber-600"
+                >
+                  <Flag size={14} /> Re-seed Mock Data
+                </button>
               </div>
               {flaggedList.length === 0 ? (
                 <div className="card-wellness text-center py-16">

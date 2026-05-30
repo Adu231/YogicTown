@@ -99,7 +99,7 @@ const FeaturesPage = () => {
         </section>
 
         {/* Feature Sections */}
-        <section className="max-w-7xl mx-auto px-4 md:px-8 py-16 space-y-20">
+        <section id="explore-features" className="max-w-7xl mx-auto px-4 md:px-8 py-16 space-y-20">
           {FEATURE_SECTIONS.map((feature, i) => {
             const Icon = feature.icon;
             return (
