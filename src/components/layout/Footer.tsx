@@ -81,9 +81,9 @@ export function Footer() {
                 { label: 'Instructors', href: '/instructors' },
                 { label: 'Retreats', href: '/retreats' },
                 { label: 'Live Classes', href: '/dashboard' },
-                { label: 'AI Wellness Coach', href: '/features' },
+                { label: 'AI Wellness Coach', href: '/features#ai-wellness-coach' },
               ].map((item) => (
-                <li key={item.href}>
+                <li key={item.label}>
                   <Link to={item.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
                     {item.label}
                   </Link>
@@ -99,8 +99,8 @@ export function Footer() {
               {[
                 { label: 'About Us', href: '/about' },
                 { label: 'Blog', href: '/blog' },
-                { label: 'Careers', href: '/about' },
-                { label: 'Press', href: '/about' },
+                { label: 'Careers', href: '/about#careers' },
+                { label: 'Press', href: '/about#press' },
                 { label: 'Contact', href: '/contact' },
                 { label: 'Community', href: '/dashboard' },
               ].map((item) => (

@@ -103,7 +103,7 @@ const FeaturesPage = () => {
           {FEATURE_SECTIONS.map((feature, i) => {
             const Icon = feature.icon;
             return (
-              <div key={i} className={cn(
+              <div key={i} id={feature.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')} className={cn(
                 "grid grid-cols-1 lg:grid-cols-2 gap-12 items-center",
                 i % 2 === 1 && "lg:flex-row-reverse"
               )}>

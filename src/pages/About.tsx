@@ -129,7 +129,7 @@ const About = () => {
         </section>
 
         {/* Press */}
-        <section className="section-padding bg-background">
+        <section id="press" className="section-padding bg-background">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl font-bold mb-8">Featured In</h2>
             <div className="flex flex-wrap items-center justify-center gap-8">
@@ -143,7 +143,7 @@ const About = () => {
         </section>
 
         {/* Hiring CTA */}
-        <section className="section-padding" style={{ background: isDark ? 'hsl(150 15% 12%)' : 'hsl(133 20% 96%)' }}>
+        <section id="careers" className="section-padding" style={{ background: isDark ? 'hsl(150 15% 12%)' : 'hsl(133 20% 96%)' }}>
           <div className="max-w-2xl mx-auto text-center">
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ background: 'hsl(133 18% 59%)' }}>
               <Users size={24} className="text-white" />
