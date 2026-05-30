@@ -94,6 +94,14 @@ const OrganizerDashboard = () => {
     return INITIAL_EVENTS;
   });
 
+  const [promotedRetreats, setPromotedRetreats] = useState<number[]>(() => {
+    const stored = localStorage.getItem('organizer_promoted_retreats');
+    if (stored) {
+      try { return JSON.parse(stored); } catch { return []; }
+    }
+    return [];
+  });
+
   // Notifications State
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState(() => {
@@ -126,6 +134,10 @@ const OrganizerDashboard = () => {
   }, [events]);
 
   useEffect(() => {
+    localStorage.setItem('organizer_promoted_retreats', JSON.stringify(promotedRetreats));
+  }, [promotedRetreats]);
+
+  useEffect(() => {
     localStorage.setItem('organizer_notifications', JSON.stringify(notifications));
   }, [notifications]);
 
@@ -145,6 +157,17 @@ const OrganizerDashboard = () => {
   // Forms
   const [retreatForm, setRetreatForm] = useState({ title: '', location: '', dates: '', price: '', spotsTotal: '', category: 'Yoga', description: '', includes: '' });
   const [eventForm, setEventForm] = useState({ title: '', location: '', date: '', tickets: '', price: '', description: '' });
+
+  const handleTogglePromoteRetreat = (id: number) => {
+    const isPromoted = promotedRetreats.includes(id);
+    if (isPromoted) {
+      setPromotedRetreats(prev => prev.filter(x => x !== id));
+      toast.success('Retreat promotion cancelled');
+    } else {
+      setPromotedRetreats(prev => [...prev, id]);
+      toast.success('Retreat promoted successfully! 🚀');
+    }
+  };
 
   if (!user) { navigate('/login', { replace: true }); return null; }
   const handleLogout = () => { logout(); toast.success('See you soon! Namaste 🙏'); navigate('/'); };
@@ -522,10 +545,10 @@ const OrganizerDashboard = () => {
                         className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold border border-border hover:bg-muted transition-colors">
                         <Edit2 size={12} /> Edit
                       </button>
-                      <button onClick={() => toast.success('Retreat promoted!')}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-white"
-                        style={{ background: ACCENT }}>
-                        Promote
+                      <button onClick={() => handleTogglePromoteRetreat(r.id)}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all ${promotedRetreats.includes(r.id) ? 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400 border border-green-200 dark:border-green-800' : 'text-white'}`}
+                        style={promotedRetreats.includes(r.id) ? {} : { background: ACCENT }}>
+                        {promotedRetreats.includes(r.id) ? 'Promoted ✓' : 'Promote'}
                       </button>
                     </div>
                   </div>

@@ -1,17 +1,96 @@
+import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ScrollToTop } from '@/components/layout/ScrollToTop';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { useTheme } from '@/hooks/useTheme';
+import { useAuth } from '@/hooks/useAuth';
 import { MapPin, Calendar, Star, Users, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { RETREATS } from '@/constants';
 import { toast } from 'sonner';
+import { Modal, FormField, inputClass, selectClass, textareaClass } from '@/components/features/Modal';
 import retreatImage from '@/assets/retreat-landscape.jpg';
 
 const Retreats = () => {
   useScrollTop();
   const { isDark } = useTheme();
+  const { user } = useAuth();
+
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [selectedRetreat, setSelectedRetreat] = useState<typeof RETREATS[0] | null>(null);
+  const [bookingForm, setBookingForm] = useState({ name: '', email: '', phone: '', guests: 1, notes: '' });
+
+  const handleOpenBooking = (retreat: typeof RETREATS[0]) => {
+    setSelectedRetreat(retreat);
+    setBookingForm({
+      name: user ? user.name : '',
+      email: user ? user.email : '',
+      phone: '',
+      guests: 1,
+      notes: ''
+    });
+    setBookingModalOpen(true);
+  };
+
+  const handleConfirmBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bookingForm.name || !bookingForm.email || !bookingForm.phone) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const nextIdNum = Math.floor(100 + Math.random() * 900);
+    const bookingId = `BK${nextIdNum}`;
+
+    const storedBookingsRaw = localStorage.getItem('organizer_bookings');
+    let bookingsList = [];
+    if (storedBookingsRaw) {
+      try { bookingsList = JSON.parse(storedBookingsRaw); } catch { bookingsList = []; }
+    } else {
+      bookingsList = [
+        { id: 'BK001', guest: 'Meera Singh', email: 'meera@ex.com', phone: '+91 98765 43210', retreat: 'Sacred Valley Yoga & Meditation Retreat', date: 'Jun 10, 2026', amount: 1299, status: 'confirmed', guests: 1, avatar: 'https://ui-avatars.com/api/?name=Meera+Singh&background=84A98C&color=fff', notes: 'Vegetarian meal preference.' },
+        { id: 'BK002', guest: 'Rahul Sharma', email: 'rahul.s@ex.com', phone: '+91 87654 32109', retreat: 'Bali Sunrise Wellness Journey', date: 'Jun 8, 2026', amount: 2199, status: 'confirmed', guests: 1, avatar: 'https://ui-avatars.com/api/?name=Rahul+Sharma&background=F4A261&color=fff', notes: 'First-time experience.' },
+        { id: 'BK003', guest: 'Anjali Patel', email: 'anjali@ex.com', phone: '+91 76543 21098', retreat: 'Himalayan Spiritual Immersion', date: 'Jun 5, 2026', amount: 999, status: 'pending', guests: 2, avatar: 'https://ui-avatars.com/api/?name=Anjali+Patel&background=5B8FB9&color=fff', notes: 'Booking for 2 guests.' }
+      ];
+    }
+
+    const amount = selectedRetreat ? selectedRetreat.price * bookingForm.guests : 0;
+    const newBooking = {
+      id: bookingId,
+      guest: bookingForm.name,
+      email: bookingForm.email,
+      phone: bookingForm.phone,
+      retreat: selectedRetreat ? selectedRetreat.title : '',
+      date: new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }),
+      amount: amount,
+      status: 'pending',
+      guests: Number(bookingForm.guests),
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(bookingForm.name)}&background=84A98C&color=fff`,
+      notes: bookingForm.notes
+    };
+
+    bookingsList = [newBooking, ...bookingsList];
+    localStorage.setItem('organizer_bookings', JSON.stringify(bookingsList));
+
+    const storedNotifsRaw = localStorage.getItem('organizer_notifications');
+    let organizerNotifs = [];
+    if (storedNotifsRaw) {
+      try { organizerNotifs = JSON.parse(storedNotifsRaw); } catch { organizerNotifs = []; }
+    }
+    const newNotif = {
+      id: Date.now(),
+      title: 'New Booking Request! 🧘',
+      desc: `${bookingForm.name} requested to book ${selectedRetreat?.title} for ${bookingForm.guests} guest(s).`,
+      time: 'Just now',
+      read: false
+    };
+    organizerNotifs = [newNotif, ...organizerNotifs];
+    localStorage.setItem('organizer_notifications', JSON.stringify(organizerNotifs));
+
+    setBookingModalOpen(false);
+    toast.success(`Booking request submitted successfully for ${selectedRetreat?.title}!`);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -84,7 +163,7 @@ const Retreats = () => {
                         <span className="text-2xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'hsl(133 20% 40%)' }}>${retreat.price.toLocaleString()}</span>
                         <span className="text-xs text-muted-foreground ml-1">/ person</span>
                       </div>
-                      <button onClick={() => toast.success(`Booking request sent for ${retreat.title}!`)}
+                      <button onClick={() => handleOpenBooking(retreat)}
                         className="btn-accent text-xs px-4 py-2">
                         Book Now
                       </button>
@@ -107,6 +186,112 @@ const Retreats = () => {
       </main>
       <Footer />
       <ScrollToTop />
+
+      {/* Retreat Booking Modal */}
+      <Modal 
+        open={bookingModalOpen} 
+        onClose={() => setBookingModalOpen(false)} 
+        title="Book Retreat Spot" 
+        subtitle={selectedRetreat?.title}
+        accentColor="hsl(133 18% 59%)"
+      >
+        {selectedRetreat && (
+          <form onSubmit={handleConfirmBooking} className="space-y-4">
+            <div className="p-4 rounded-xl bg-muted/40 flex justify-between items-center mb-4">
+              <div>
+                <span className="text-xs text-muted-foreground block">Selected Retreat Price</span>
+                <span className="text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'hsl(133 20% 40%)' }}>
+                  ${selectedRetreat.price} <span className="text-xs text-muted-foreground font-normal">/ person</span>
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-xs text-muted-foreground block">Led by</span>
+                <span className="text-sm font-semibold">{selectedRetreat.instructor}</span>
+              </div>
+            </div>
+
+            <FormField label="Full Name" required>
+              <input 
+                type="text" 
+                value={bookingForm.name} 
+                onChange={e => setBookingForm(p => ({ ...p, name: e.target.value }))}
+                placeholder="e.g. Meera Singh" 
+                className={inputClass}
+                required
+              />
+            </FormField>
+
+            <FormField label="Email Address" required>
+              <input 
+                type="email" 
+                value={bookingForm.email} 
+                onChange={e => setBookingForm(p => ({ ...p, email: e.target.value }))}
+                placeholder="meera@example.com" 
+                className={inputClass}
+                required
+              />
+            </FormField>
+
+            <FormField label="Phone Number" required>
+              <input 
+                type="tel" 
+                value={bookingForm.phone} 
+                onChange={e => setBookingForm(p => ({ ...p, phone: e.target.value }))}
+                placeholder="+91 98765 43210" 
+                className={inputClass}
+                required
+              />
+            </FormField>
+
+            <FormField label="Number of Guests" required>
+              <select 
+                value={bookingForm.guests} 
+                onChange={e => setBookingForm(p => ({ ...p, guests: Number(e.target.value) }))}
+                className={selectClass}
+              >
+                {[1, 2, 3, 4, 5].map(n => (
+                  <option key={n} value={n}>{n} {n === 1 ? 'Guest' : 'Guests'}</option>
+                ))}
+              </select>
+            </FormField>
+
+            <FormField label="Special Requests / Dietary Preferences">
+              <textarea 
+                value={bookingForm.notes} 
+                onChange={e => setBookingForm(p => ({ ...p, notes: e.target.value }))}
+                placeholder="e.g., Vegetarian meals, quiet room requested..." 
+                rows={3} 
+                className={textareaClass}
+              />
+            </FormField>
+
+            <div className="pt-4 flex justify-between items-center border-t border-border mt-6">
+              <div>
+                <span className="text-xs text-muted-foreground block">Total Amount</span>
+                <span className="text-2xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'hsl(133 20% 40%)' }}>
+                  ${(selectedRetreat.price * bookingForm.guests).toLocaleString()}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  type="button" 
+                  onClick={() => setBookingModalOpen(false)}
+                  className="py-2.5 px-4 rounded-xl text-sm font-semibold border border-border hover:bg-muted transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="py-2.5 px-6 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                  style={{ background: 'hsl(133 18% 59%)' }}
+                >
+                  Confirm Booking
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
+      </Modal>
     </div>
   );
 };
