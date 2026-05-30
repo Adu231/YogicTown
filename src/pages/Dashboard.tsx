@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
+import SettingsView from '@/pages/Settings';
 import { ThemeToggle } from '@/components/features/ThemeToggle';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { toast } from 'sonner';
@@ -1287,7 +1288,7 @@ const Dashboard = () => {
     navigate('/');
   };
 
-  const activeLabel = NAV_ITEMS.find((n) => n.id === activeNav)?.label || 'Dashboard';
+  const activeLabel = NAV_ITEMS.find((n) => n.id === activeNav)?.label || (activeNav === 'settings' ? 'Settings' : 'Dashboard');
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -1320,9 +1321,11 @@ const Dashboard = () => {
         </nav>
 
         <div className="px-3 py-4 border-t border-sidebar-border space-y-1">
-          <Link to="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+          <button onClick={() => { setActiveNav('settings'); setSidebarOpen(false); }}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeNav === 'settings' ? 'text-white' : 'text-sidebar-foreground hover:bg-sidebar-accent'}`}
+            style={activeNav === 'settings' ? { background: 'hsl(133 18% 59%)' } : {}}>
             <Settings size={18} /> Settings
-          </Link>
+          </button>
           <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-destructive hover:bg-destructive/10 transition-colors">
             <LogOut size={18} /> Sign Out
           </button>
@@ -1352,6 +1355,7 @@ const Dashboard = () => {
                  activeNav === 'meditation' ? 'Find your inner peace' :
                  activeNav === 'schedule' ? 'Your weekly class planner' :
                  activeNav === 'community' ? 'Connect with practitioners worldwide' :
+                 activeNav === 'settings' ? 'Customize your experience' :
                  'Your holistic health insights'}
               </p>
             </div>
@@ -1604,6 +1608,9 @@ const Dashboard = () => {
 
           {/* ── Analytics ── */}
           {activeNav === 'analytics' && <AnalyticsPanel isDark={isDark} />}
+
+          {/* ── Settings ── */}
+          {activeNav === 'settings' && <SettingsView hideLayout={true} />}
 
         </main>
       </div>

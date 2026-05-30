@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';  
+import SettingsView from '@/pages/Settings';
 import { ThemeToggle } from '@/components/features/ThemeToggle';
 import { useScrollTop } from '@/hooks/useScrollTop';
 import { Modal, FormField, inputClass, selectClass, textareaClass } from '@/components/features/Modal';
@@ -300,9 +301,11 @@ const AdminDashboard = () => {
           ))}
         </nav>
         <div className="px-3 py-4 border-t border-sidebar-border space-y-1">
-          <Link to="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-sidebar-foreground hover:bg-sidebar-accent transition-colors">
+          <button onClick={() => { setActiveNav('settings'); setSidebarOpen(false); }}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeNav === 'settings' ? 'text-white' : 'text-sidebar-foreground hover:bg-sidebar-accent'}`}
+            style={activeNav === 'settings' ? { background: ADMIN_COLOR } : {}}>
             <Settings size={18} /> Settings
-          </Link>
+          </button>
           <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-destructive hover:bg-destructive/10 transition-colors">
             <LogOut size={18} /> Sign Out
           </button>
@@ -828,6 +831,9 @@ const AdminDashboard = () => {
               </div>
             </div>
           )}
+
+          {/* ── Settings ── */}
+          {activeNav === 'settings' && <SettingsView hideLayout={true} />}
 
         </main>
       </div>
